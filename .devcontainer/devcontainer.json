@@ -1,0 +1,20 @@
+{
+    "name": "HFT System C++ Dev Environment",
+    "image": "mcr.microsoft.com/devcontainers/cpp:1-bullseye",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+                "editor.formatOnSave": true
+            },
+            "extensions": [
+                "ms-vscode.cpptools-extension-pack",
+                "ms-vscode.cmake-tools",
+                "cheshirekow.cmake-format",
+                "streetsidesoftware.code-spell-checker",
+                "eamodio.gitlens"
+            ]
+        }
+    },
+    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y libboost-all-dev libpq-dev libpqxx-dev libeigen3-dev libtbb-dev && wget https://github.com/Kitware/CMake/releases/download/v3.25.1/cmake-3.25.1-linux-x86_64.sh && chmod +x cmake-3.25.1-linux-x86_64.sh && sudo ./cmake-3.25.1-linux-x86_64.sh --prefix=/usr/local --skip-license && echo 'export PATH=/usr/local/bin:$PATH' >> ~/.bashrc"
+}
