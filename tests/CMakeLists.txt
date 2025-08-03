@@ -3,9 +3,13 @@
 # Copy our data folder to the same directory where the executable will be created.
 file(COPY data DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
+# tests/CMakeLists.txt
 add_executable(run_tests
     main_test.cpp
+    portfolio_manager_test.cpp
+    strategy_manager_test.cpp # Add this line
 )
+# ...
 
 target_include_directories(run_tests PRIVATE
     "${PROJECT_SOURCE_DIR}/include"
