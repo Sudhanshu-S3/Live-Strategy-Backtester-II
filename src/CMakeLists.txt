@@ -8,8 +8,9 @@ add_library(hft_system_core
     core/Log.cpp
     core/PortfolioManager.cpp
     data/HistoricCSVDataHandler.cpp
+    strategy/BuyEveryTickStrategy.cpp
     strategy/StrategyManager.cpp
-    strategy/BuyEveryTickStrategy.cpp # Add this line
+    execution/ExecutionHandler.cpp # Add this line
 )
 
 # This library needs access to our public header files in the /include directory.

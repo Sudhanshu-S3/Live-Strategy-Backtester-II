@@ -7,9 +7,11 @@ file(COPY data DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 add_executable(run_tests
     main_test.cpp
     portfolio_manager_test.cpp
-    strategy_manager_test.cpp # Add this line
+    strategy_manager_test.cpp
+    execution_handler_test.cpp
+    integration_test.cpp # Add this line
 )
-# ...
+# ... (rest of the file is unchanged)
 
 target_include_directories(run_tests PRIVATE
     "${PROJECT_SOURCE_DIR}/include"
