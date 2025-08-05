@@ -1,4 +1,3 @@
-// include/strategy/StrategyManager.h
 #ifndef HFT_SYSTEM_STRATEGYMANAGER_H
 #define HFT_SYSTEM_STRATEGYMANAGER_H
 

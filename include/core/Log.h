@@ -1,4 +1,4 @@
-// include/core/Log.h
+
 #ifndef HFT_SYSTEM_LOG_H
 #define HFT_SYSTEM_LOG_H
 

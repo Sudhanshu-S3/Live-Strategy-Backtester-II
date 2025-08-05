@@ -1,8 +1,7 @@
-// include/events/Event.h
 #ifndef HFT_SYSTEM_EVENT_H
 #define HFT_SYSTEM_EVENT_H
 
-#include "../core/DataTypes.h" // Must include the correct definitions
+#include "../core/DataTypes.h" 
 #include <string>
 #include <memory>
 #include <chrono>

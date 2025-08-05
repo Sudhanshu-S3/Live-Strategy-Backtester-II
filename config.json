@@ -1,0 +1,7 @@
+{
+    "initial_capital": 100000.0,
+    "data": {
+        "symbol": "TEST_STOCK",
+        "data_file": "tests/data/test_market_data.csv"
+    }
+}

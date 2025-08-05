@@ -1,7 +1,10 @@
-// main.cpp
 #include <iostream>
 #include <memory>
 #include <future>
+#include <stdexcept>
+
+#include "include/config/ConfigParser.h"
+#include "include/config/Config.h"
 
 #include "include/core/Log.h"
 #include "include/core/EventBus.h"
@@ -13,53 +16,61 @@
 
 int main(int argc, char **argv)
 {
-    // 1. Initialization
     hft_system::Log::init();
-    auto event_bus = std::make_shared<hft_system::EventBus>();
 
-    // Create all components
-    auto data_handler = std::make_shared<hft_system::HistoricCSVDataHandler>(event_bus, "TEST_STOCK", "tests/data/test_market_data.csv");
-    auto strategy_manager = std::make_shared<hft_system::StrategyManager>(event_bus, "StrategyManager");
-    auto portfolio_manager = std::make_shared<hft_system::PortfolioManager>(event_bus, "PortfolioManager", 100000.0);
-    auto execution_handler = std::make_shared<hft_system::ExecutionHandler>(event_bus, "ExecutionHandler");
+    try
+    {
+        // 1. Load Configuration
+        hft_system::Config config = hft_system::ConfigParser::parse("config.json");
+        hft_system::Log::get_logger()->info("Configuration loaded successfully.");
+        hft_system::Log::get_logger()->info("Initial Capital: ${}", config.initial_capital);
+        hft_system::Log::get_logger()->info("Data Symbol: {}", config.data.symbol);
 
-    // Load our simple strategy
-    strategy_manager->add_strategy(std::make_unique<hft_system::BuyEveryTickStrategy>());
+        // 2. Initialization
+        auto event_bus = std::make_shared<hft_system::EventBus>();
 
-    // 2. Setup Completion Signal
-    std::promise<void> backtest_complete_promise;
-    std::future<void> backtest_complete_future = backtest_complete_promise.get_future();
+        // Create all components using values from the config object
+        auto data_handler = std::make_shared<hft_system::HistoricCSVDataHandler>(event_bus, config.data.symbol, config.data.file_path);
+        auto strategy_manager = std::make_shared<hft_system::StrategyManager>(event_bus, "StrategyManager");
+        auto portfolio_manager = std::make_shared<hft_system::PortfolioManager>(event_bus, "PortfolioManager", config.initial_capital);
+        auto execution_handler = std::make_shared<hft_system::ExecutionHandler>(event_bus, "ExecutionHandler");
 
-    // Subscribe to the system event that signals the end of the backtest
-    event_bus->subscribe(hft_system::EventType::SYSTEM,
-                         [&](const hft_system::Event &event)
-                         {
-                             hft_system::Log::get_logger()->info("--- Backtest Complete Signal Received ---");
-                             backtest_complete_promise.set_value();
-                         });
+        // ... (rest of the main function is the same as before)
+        strategy_manager->add_strategy(std::make_unique<hft_system::BuyEveryTickStrategy>());
+        // ...
 
-    // 3. Start the System
-    event_bus->start();
-    portfolio_manager->start();
-    strategy_manager->start();
-    execution_handler->start();
-    data_handler->start(); // DataHandler starts last to kick off the event flow
+        std::promise<void> backtest_complete_promise;
+        std::future<void> backtest_complete_future = backtest_complete_promise.get_future();
 
-    hft_system::Log::get_logger()->info("--- Backtest Running ---");
+        event_bus->subscribe(hft_system::EventType::SYSTEM,
+                             [&](const hft_system::Event &event)
+                             {
+                                 hft_system::Log::get_logger()->info("--- Backtest Complete Signal Received ---");
+                                 backtest_complete_promise.set_value();
+                             });
 
-    // 4. Wait for Completion
-    // The main thread will block here until the promise is fulfilled.
-    backtest_complete_future.get();
+        event_bus->start();
+        portfolio_manager->start();
+        strategy_manager->start();
+        execution_handler->start();
+        data_handler->start();
 
-    // 5. Shutdown
-    data_handler->stop();
-    execution_handler->stop();
-    strategy_manager->stop();
-    portfolio_manager->stop();
-    event_bus->stop();
+        hft_system::Log::get_logger()->info("--- Backtest Running ---");
+        backtest_complete_future.get();
 
-    hft_system::Log::get_logger()->info("--- System Shutdown Complete ---");
+        data_handler->stop();
+        execution_handler->stop();
+        strategy_manager->stop();
+        portfolio_manager->stop();
+        event_bus->stop();
+
+        hft_system::Log::get_logger()->info("--- System Shutdown Complete ---");
+    }
+    catch (const std::exception &e)
+    {
+        hft_system::Log::get_logger()->critical("Fatal Error: {}", e.what());
+    }
+
     hft_system::Log::shutdown();
-
     return 0;
 }

@@ -1,4 +1,3 @@
-// src/strategy/BuyEveryTickStrategy.cpp
 #include "../../include/strategy/BuyEveryTickStrategy.h"
 
 namespace hft_system {

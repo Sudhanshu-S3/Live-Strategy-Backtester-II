@@ -1,4 +1,3 @@
-// src/data/HistoricCSVDataHandler.cpp
 #include "../../include/data/HistoricCSVDataHandler.h"
 #include "../../include/events/Event.h"
 #include <fstream>

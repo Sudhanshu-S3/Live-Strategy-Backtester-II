@@ -1,4 +1,3 @@
-// include/core/Component.h
 #ifndef HFT_SYSTEM_COMPONENT_H
 #define HFT_SYSTEM_COMPONENT_H
 

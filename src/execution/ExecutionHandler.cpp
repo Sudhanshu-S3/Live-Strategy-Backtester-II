@@ -1,4 +1,3 @@
-// src/execution/ExecutionHandler.cpp
 #include "../../include/execution/ExecutionHandler.h"
 #include "../../include/core/Log.h"
 #include <functional>

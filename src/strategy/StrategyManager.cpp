@@ -1,4 +1,3 @@
-// src/strategy/StrategyManager.cpp
 #include "../../include/strategy/StrategyManager.h"
 #include "../../include/core/Log.h"
 #include <functional>

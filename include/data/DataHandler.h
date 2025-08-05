@@ -1,4 +1,3 @@
-// include/data/DataHandler.h
 #ifndef HFT_SYSTEM_DATAHANDLER_H
 #define HFT_SYSTEM_DATAHANDLER_H
 

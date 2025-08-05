@@ -1,4 +1,3 @@
-// include/strategy/BuyEveryTickStrategy.h
 #ifndef HFT_SYSTEM_BUYEVERYTICKSTRATEGY_H
 #define HFT_SYSTEM_BUYEVERYTICKSTRATEGY_H
 

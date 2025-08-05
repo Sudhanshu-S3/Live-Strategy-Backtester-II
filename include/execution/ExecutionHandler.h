@@ -1,4 +1,3 @@
-// include/execution/ExecutionHandler.h
 #ifndef HFT_SYSTEM_EXECUTIONHANDLER_H
 #define HFT_SYSTEM_EXECUTIONHANDLER_H
 

@@ -1,4 +1,4 @@
-// include/strategy/Strategy.h
+
 #ifndef HFT_SYSTEM_STRATEGY_H
 #define HFT_SYSTEM_STRATEGY_H
 
