@@ -1,14 +1,34 @@
 {
+  "run_mode": "BACKTEST",
   "initial_capital": 100000.0,
   "data": {
     "symbol": "TEST_STOCK",
-    "data_file": "tests/data/test_market_data.csv"
+    "data_file": "tests/data/order_book_data.csv"
   },
+  "websocket": {
+    "host": "localhost",
+    "port": 9001,
+    "target": "/"
+  },
+  "strategies": [
+    {
+      "name": "ORDER_BOOK_IMBALANCE",
+      "symbol": "TEST_STOCK",
+      "params": {
+        "lookback_levels": 2,
+        "imbalance_threshold": 1.5
+      }
+    }
+  ],
   "execution": {
     "commission_pct": 0.001,
     "slippage_pct": 0.0005
   },
   "risk": {
     "risk_per_trade_pct": 0.01
+  },
+  "analytics": {
+    "calculate_sharpe": true,
+    "calculate_max_drawdown": true
   }
 }

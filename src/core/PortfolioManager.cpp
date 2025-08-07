@@ -19,6 +19,9 @@ namespace hft_system
     void PortfolioManager::start()
     {
         Log::get_logger()->info("{} started.", name_);
+        // Publish the initial portfolio state
+        auto initial_update = std::make_shared<PortfolioUpdateEvent>(capital_, cash_);
+        event_bus_->publish(initial_update);
     }
 
     void PortfolioManager::stop()

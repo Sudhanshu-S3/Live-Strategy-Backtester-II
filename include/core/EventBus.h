@@ -1,4 +1,3 @@
-
 #ifndef HFT_SYSTEM_EVENTBUS_H
 #define HFT_SYSTEM_EVENTBUS_H
 

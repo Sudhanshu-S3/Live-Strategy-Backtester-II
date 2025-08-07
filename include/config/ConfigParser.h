@@ -10,8 +10,6 @@ namespace hft_system
     class ConfigParser
     {
     public:
-        // Parses the given JSON file and returns a Config object.
-        // Throws an exception on error.
         static Config parse(const std::string &filename);
     };
 

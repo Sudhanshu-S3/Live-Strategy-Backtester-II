@@ -10,10 +10,9 @@ namespace hft_system {
 // Abstract base class for all trading strategies.
 class Strategy {
 public:
-    virtual ~Strategy() = default;
+    
+    virtual ~Strategy() = 0;
 
-    // Each strategy must implement this method.
-    // It takes market data and returns a signal if conditions are met.
     virtual std::unique_ptr<SignalEvent> calculate_signal(const MarketEvent& event) = 0;
 };
 

@@ -1,25 +1,26 @@
-# Create a library containing all our core system components.
-# This allows the code to be shared between the main executable and the tests.
-
-
 add_library(hft_system_core
     core/EventBus.cpp
     core/Log.cpp
     core/PortfolioManager.cpp
     config/ConfigParser.cpp
     data/HistoricCSVDataHandler.cpp
+    data/WebSocketDataHandler.cpp
+    strategy/Strategy.cpp                   # Add this line
     strategy/BuyEveryTickStrategy.cpp
+    strategy/OrderBookImbalanceStrategy.cpp
     strategy/StrategyManager.cpp
-    execution/ExecutionHandler.cpp
     risk/RiskManager.cpp
+    execution/ExecutionHandler.cpp
+    analytics/Analytics.cpp
 )
 
 target_include_directories(hft_system_core PUBLIC
     "${PROJECT_SOURCE_DIR}/include"
 )
 
-# Link our core library against the dependencies it uses.
 target_link_libraries(hft_system_core PUBLIC
     spdlog::spdlog
-    simdjson::simdjson # This line is critical
+    simdjson::simdjson
+    Boost::system
+    Boost::thread
 )

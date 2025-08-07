@@ -13,6 +13,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+find_package(Boost 1.74 REQUIRED COMPONENTS system thread)
+find_package(OpenSSL REQUIRED)
 # =============================================================================
 # Dependency Management (Modern Approach)
 # =============================================================================
@@ -53,4 +55,9 @@ add_subdirectory(tests)
 # Main Executable Target
 # =============================================================================
 add_executable(hft_system main.cpp)
-target_link_libraries(hft_system PRIVATE hft_system_core)
+
+target_link_libraries(hft_system PRIVATE
+    hft_system_core
+    OpenSSL::SSL          # ADD THIS LINE
+    OpenSSL::Crypto       # ADD THIS LINE
+)
