@@ -1,45 +1,62 @@
 #include "../../include/execution/ExecutionHandler.h"
+#include "../../include/config/Config.h"
 #include "../../include/core/Log.h"
 #include <functional>
 
-namespace hft_system {
+using hft_system::OrderDirection;
 
-ExecutionHandler::ExecutionHandler(std::shared_ptr<EventBus> event_bus, std::string name)
-    : Component(event_bus, std::move(name)) {
-    
-    using namespace std::placeholders;
-    event_bus_->subscribe(EventType::ORDER, std::bind(&ExecutionHandler::on_order, this, _1));
-}
+namespace hft_system
+{
 
-void ExecutionHandler::start() {
-    Log::get_logger()->info("{} started.", name_);
-}
+    ExecutionHandler::ExecutionHandler(std::shared_ptr<EventBus> event_bus, std::string name, const ExecutionConfig &config)
+        : Component(event_bus, std::move(name)), config_(config)
+    {
 
-void ExecutionHandler::stop() {
-    Log::get_logger()->info("{} stopped.", name_);
-}
+        using namespace std::placeholders;
+        event_bus_->subscribe(EventType::ORDER, std::bind(&ExecutionHandler::on_order, this, _1));
+    }
 
-void ExecutionHandler::on_order(const Event& event) {
-    const auto& order = static_cast<const OrderEvent&>(event);
-    Log::get_logger()->info("{}: Received order to {} {} {}.", name_,
-                             order.direction == OrderDirection::BUY ? "BUY" : "SELL", 
-                             order.quantity, order.symbol);
+    void ExecutionHandler::start()
+    {
+        Log::get_logger()->info("{} started.", name_);
+    }
 
-    // In a real system, this is where you would interact with a brokerage API.
-    // Here, we simulate the execution. For now, we assume the order is
-    // filled instantly at a hardcoded price.
-    // A more advanced simulation would model latency, slippage, and partial fills.
-    double simulated_fill_price = 300.0; // Example price
+    void ExecutionHandler::stop()
+    {
+        Log::get_logger()->info("{} stopped.", name_);
+    }
 
-    auto fill = std::make_shared<FillEvent>(
-        order.symbol,
-        order.direction,
-        order.quantity,
-        simulated_fill_price
-    );
+    void ExecutionHandler::on_order(const Event &event)
+    {
+        const auto &order = static_cast<const OrderEvent &>(event);
+        Log::get_logger()->info("{}: Received order to {} {} {}.", name_,
+                                order.direction == OrderDirection::BUY ? "BUY" : "SELL",
+                                order.quantity, order.symbol);
 
-    event_bus_->publish(fill);
-    Log::get_logger()->info("{}: Published fill event for {}.", name_, order.symbol);
-}
+        double slippage = order.market_price * config_.slippage_pct;
+        double fill_price = 0.0;
+
+        if (order.direction == OrderDirection::BUY)
+        {
+            fill_price = order.market_price + slippage;
+        }
+        else
+        {
+            fill_price = order.market_price - slippage;
+        }
+
+        double commission = fill_price * order.quantity * config_.commission_pct;
+
+        auto fill = std::make_shared<FillEvent>(
+            order.symbol,
+            order.direction,
+            order.quantity,
+            fill_price,
+            commission);
+
+        event_bus_->publish(fill);
+        Log::get_logger()->info("{}: Published fill event for {}. Fill Price (with slippage): ${}, Commission: ${}",
+                                name_, order.symbol, fill_price, commission);
+    }
 
 } // namespace hft_system

@@ -11,6 +11,7 @@ add_library(hft_system_core
     strategy/BuyEveryTickStrategy.cpp
     strategy/StrategyManager.cpp
     execution/ExecutionHandler.cpp
+    risk/RiskManager.cpp
 )
 
 target_include_directories(hft_system_core PUBLIC

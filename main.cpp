@@ -13,6 +13,7 @@
 #include "include/strategy/BuyEveryTickStrategy.h"
 #include "include/core/PortfolioManager.h"
 #include "include/execution/ExecutionHandler.h"
+#include "include/risk/RiskManager.h"
 
 int main(int argc, char **argv)
 {
@@ -33,8 +34,8 @@ int main(int argc, char **argv)
         auto data_handler = std::make_shared<hft_system::HistoricCSVDataHandler>(event_bus, config.data.symbol, config.data.file_path);
         auto strategy_manager = std::make_shared<hft_system::StrategyManager>(event_bus, "StrategyManager");
         auto portfolio_manager = std::make_shared<hft_system::PortfolioManager>(event_bus, "PortfolioManager", config.initial_capital);
-        auto execution_handler = std::make_shared<hft_system::ExecutionHandler>(event_bus, "ExecutionHandler");
-
+        auto execution_handler = std::make_shared<hft_system::ExecutionHandler>(event_bus, "ExecutionHandler", config.execution);
+        auto risk_manager = std::make_shared<hft_system::RiskManager>(event_bus, "RiskManager", config);
         // ... (rest of the main function is the same as before)
         strategy_manager->add_strategy(std::make_unique<hft_system::BuyEveryTickStrategy>());
         // ...
@@ -53,6 +54,7 @@ int main(int argc, char **argv)
         portfolio_manager->start();
         strategy_manager->start();
         execution_handler->start();
+        risk_manager->start();
         data_handler->start();
 
         hft_system::Log::get_logger()->info("--- Backtest Running ---");
@@ -62,6 +64,7 @@ int main(int argc, char **argv)
         execution_handler->stop();
         strategy_manager->stop();
         portfolio_manager->stop();
+        risk_manager->stop();
         event_bus->stop();
 
         hft_system::Log::get_logger()->info("--- System Shutdown Complete ---");

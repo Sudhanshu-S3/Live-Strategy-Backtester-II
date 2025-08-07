@@ -1,4 +1,3 @@
-// tests/portfolio_manager_test.cpp
 #include <gtest/gtest.h>
 #include <future>
 #include <memory>
@@ -10,19 +9,15 @@
 
 using namespace hft_system;
 
-// Test fixture for the PortfolioManager
-class PortfolioManagerTest : public ::testing::Test
-{
+class PortfolioManagerTest : public ::testing::Test {
 protected:
-    void SetUp() override
-    {
+    void SetUp() override {
         Log::init();
         event_bus = std::make_shared<EventBus>();
         portfolio_manager = std::make_shared<PortfolioManager>(event_bus, "TestPortfolio", 100000.0);
     }
 
-    void TearDown() override
-    {
+    void TearDown() override {
         Log::shutdown();
     }
 
@@ -30,38 +25,34 @@ protected:
     std::shared_ptr<PortfolioManager> portfolio_manager;
 };
 
-TEST_F(PortfolioManagerTest, ShouldGenerateOrderEventOnSignal)
-{
+// This test now verifies that the PortfolioManager correctly
+// processes a FillEvent and emits a PortfolioUpdateEvent.
+TEST_F(PortfolioManagerTest, ShouldProcessFillEventAndUpdateState) {
     // 1. Arrange
-    std::promise<bool> order_received_promise;
-    std::future<bool> order_received_future = order_received_promise.get_future();
+    std::promise<bool> update_received_promise;
+    std::future<bool> update_received_future = update_received_promise.get_future();
 
-    // Our "Test Spy" that listens for the OrderEvent
-    event_bus->subscribe(EventType::ORDER,
-                         [&](const Event &event)
-                         {
-                             const auto &order_event = dynamic_cast<const OrderEvent &>(event);
-                             // Verify the order is what we expect
-                             EXPECT_EQ(order_event.symbol, "AAPL");
-                             EXPECT_EQ(order_event.direction, OrderDirection::BUY);
-                             EXPECT_EQ(order_event.quantity, 100);
-
-                             // Fulfill the promise to signal the test has passed
-                             order_received_promise.set_value(true);
-                         });
-
+    // Our spy now listens for the PortfolioUpdateEvent
+    event_bus->subscribe(EventType::PORTFOLIO_UPDATE,
+        [&](const Event& event) {
+            const auto& update_event = dynamic_cast<const PortfolioUpdateEvent&>(event);
+            // Initial capital was 100,000. Fill was for 10 * 150.25 = 1502.5. Commission was 1.5.
+            // New cash should be 100000 - 1502.5 - 1.5 = 98496.0
+            EXPECT_NEAR(update_event.cash, 98496.0, 0.01);
+            update_received_promise.set_value(true);
+        });
+    
     event_bus->start();
     portfolio_manager->start();
 
     // 2. Act
-    // Manually create and publish a signal, as if it came from a StrategyManager
-    auto signal = std::make_shared<SignalEvent>("AAPL", OrderDirection::BUY);
-    event_bus->publish(signal);
+    // Manually publish a FillEvent, as if from the ExecutionHandler
+    auto fill_event = std::make_shared<FillEvent>("AAPL", OrderDirection::BUY, 10, 150.25, 1.50);
+    event_bus->publish(fill_event);
 
     // 3. Assert
-    // Wait for our spy to receive the order event
-    auto future_status = order_received_future.wait_for(std::chrono::seconds(1));
-    ASSERT_EQ(future_status, std::future_status::ready) << "Test timed out. The OrderEvent was never received.";
+    auto future_status = update_received_future.wait_for(std::chrono::seconds(1));
+    ASSERT_EQ(future_status, std::future_status::ready) << "Test timed out. The PortfolioUpdateEvent was never received.";
 
     // Cleanup
     portfolio_manager->stop();

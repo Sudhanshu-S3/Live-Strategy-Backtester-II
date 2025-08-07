@@ -1,6 +1,6 @@
 #ifndef HFT_SYSTEM_PORTFOLIOMANAGER_H
 #define HFT_SYSTEM_PORTFOLIOMANAGER_H
-
+#include <map>
 #include "Component.h"
 #include "../events/Event.h" // Required for the method declarations
 
@@ -18,13 +18,13 @@ namespace hft_system
         void stop() override;
 
     private:
-        // Event handler DECLARATIONS
-        void on_signal(const Event &event);
+        
         void on_fill(const Event &event);
+        
 
-        // Member variables
         double capital_;
         double cash_;
+        std::map<std::string, double> latest_prices_;
     };
 
 } // namespace hft_system

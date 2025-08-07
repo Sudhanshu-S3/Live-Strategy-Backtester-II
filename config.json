@@ -1,7 +1,14 @@
 {
-    "initial_capital": 100000.0,
-    "data": {
-        "symbol": "TEST_STOCK",
-        "data_file": "tests/data/test_market_data.csv"
-    }
+  "initial_capital": 100000.0,
+  "data": {
+    "symbol": "TEST_STOCK",
+    "data_file": "tests/data/test_market_data.csv"
+  },
+  "execution": {
+    "commission_pct": 0.001,
+    "slippage_pct": 0.0005
+  },
+  "risk": {
+    "risk_per_trade_pct": 0.01
+  }
 }

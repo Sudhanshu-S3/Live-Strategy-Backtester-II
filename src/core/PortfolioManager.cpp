@@ -2,8 +2,6 @@
 #include "../../include/core/Log.h"
 #include <functional>
 
-// By explicitly declaring that we are "using" this specific type,
-// we can resolve the compiler's confusion.
 using hft_system::OrderDirection;
 
 namespace hft_system
@@ -14,7 +12,7 @@ namespace hft_system
     {
 
         using namespace std::placeholders;
-        event_bus_->subscribe(EventType::SIGNAL, std::bind(&PortfolioManager::on_signal, this, _1));
+        // The PortfolioManager now only needs to listen for FillEvents.
         event_bus_->subscribe(EventType::FILL, std::bind(&PortfolioManager::on_fill, this, _1));
     }
 
@@ -28,40 +26,31 @@ namespace hft_system
         Log::get_logger()->info("{} stopped.", name_);
     }
 
-    void PortfolioManager::on_signal(const Event &event)
-    {
-        const auto &signal = static_cast<const SignalEvent &>(event);
-
-        // Now we can use the simpler form because of the 'using' directive above
-        Log::get_logger()->info("{}: Received signal to {} {}.", name_,
-                                signal.direction == OrderDirection::BUY ? "BUY" : "SELL", signal.symbol);
-
-        int quantity_to_trade = 100;
-
-        auto order = std::make_shared<OrderEvent>(signal.symbol, signal.direction, quantity_to_trade);
-        event_bus_->publish(order);
-        Log::get_logger()->info("{}: Published order event for {}.", name_, signal.symbol);
-    }
-
     void PortfolioManager::on_fill(const Event &event)
     {
         const auto &fill = static_cast<const FillEvent &>(event);
-
-        Log::get_logger()->info("{}: Received fill for {} {} {} at ${}",
+        Log::get_logger()->info("{}: Received fill for {} {} {} at ${}. Commission: ${}",
                                 name_, fill.direction == OrderDirection::BUY ? "BUY" : "SELL",
-                                fill.quantity, fill.symbol, fill.fill_price);
+                                fill.quantity, fill.symbol, fill.fill_price, fill.commission);
 
+        // Update our cash based on the trade, including commission
         double cost = fill.fill_price * fill.quantity;
         if (fill.direction == OrderDirection::BUY)
         {
-            cash_ -= cost;
+            cash_ -= (cost + fill.commission);
         }
         else
         {
-            cash_ += cost;
+            cash_ += (cost - fill.commission);
         }
 
         Log::get_logger()->info("{}: Cash updated to ${}", name_, cash_);
+
+        // After updating state, publish the new portfolio status.
+        // A full implementation would add the market value of all positions to cash_ to get total_equity.
+        double total_equity = cash_;
+        auto update_event = std::make_shared<PortfolioUpdateEvent>(total_equity, cash_);
+        event_bus_->publish(update_event);
     }
 
 } // namespace hft_system
