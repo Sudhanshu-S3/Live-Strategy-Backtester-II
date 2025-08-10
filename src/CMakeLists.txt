@@ -6,6 +6,7 @@ add_library(hft_system_core
     config/ConfigParser.cpp
     data/HistoricCSVDataHandler.cpp
     data/WebSocketDataHandler.cpp
+    data/NewsDataHandler.cpp
     strategy/Strategy.cpp
     strategy/BuyEveryTickStrategy.cpp
     strategy/OrderBookImbalanceStrategy.cpp
@@ -14,6 +15,7 @@ add_library(hft_system_core
     execution/ExecutionHandler.cpp
     analytics/Analytics.cpp
     api/APIServer.cpp
+    
 )
 
 target_include_directories(hft_system_core PUBLIC
@@ -26,5 +28,5 @@ target_link_libraries(hft_system_core PUBLIC
     simdjson::simdjson
     Boost::system
     Boost::thread
-    
+    cpr::cpr    
 )

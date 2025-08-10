@@ -12,11 +12,12 @@ namespace hft_system
     enum class EventType
     {
         MARKET,
-        ORDER_BOOK, // New event for order book updates
+        ORDER_BOOK,
         SIGNAL,
         ORDER,
         FILL,
         PORTFOLIO_UPDATE,
+        NEWS, // Add this new event type
         SYSTEM
     };
 
@@ -34,6 +35,17 @@ namespace hft_system
         long long timestamp;
     };
 
+    // --- ADD THIS NEW EVENT STRUCT ---
+    struct NewsEvent : public Event
+    {
+        NewsEvent(std::string symbol, std::string headline, double sentiment_score)
+            : Event(EventType::NEWS), symbol(std::move(symbol)),
+              headline(std::move(headline)), sentiment_score(sentiment_score) {}
+
+        const std::string symbol;
+        const std::string headline;
+        const double sentiment_score; // e.g., -1.0 (very negative) to 1.0 (very positive)
+    };
     struct MarketEvent : public Event
     {
         MarketEvent(std::string symbol, double price)

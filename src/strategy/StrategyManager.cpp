@@ -13,6 +13,7 @@ namespace hft_system
         using namespace std::placeholders;
         event_bus_->subscribe(EventType::MARKET, std::bind(&StrategyManager::on_market_event, this, _1));
         event_bus_->subscribe(EventType::ORDER_BOOK, std::bind(&StrategyManager::on_order_book_event, this, _1));
+        event_bus_->subscribe(EventType::NEWS, std::bind(&StrategyManager::on_news_event, this, _1)); // Add this
     }
 
     void StrategyManager::start() { Log::get_logger()->info("{} started.", name_); }
@@ -50,6 +51,17 @@ namespace hft_system
                     Log::get_logger()->info("{}: Imbalance strategy generated a signal. Publishing.", name_);
                     event_bus_->publish(std::move(signal_event));
                 }
+            }
+        }
+    }
+    void StrategyManager::on_news_event(const Event &event)
+    {
+        const auto &news_event = static_cast<const NewsEvent &>(event);
+        for (const auto &strategy : strategies_)
+        {
+            if (auto *imbalance_strategy = dynamic_cast<OrderBookImbalanceStrategy *>(strategy.get()))
+            {
+                imbalance_strategy->on_news(news_event);
             }
         }
     }

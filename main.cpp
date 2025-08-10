@@ -17,11 +17,14 @@
 #include "include/risk/RiskManager.h"
 #include "include/execution/ExecutionHandler.h"
 #include "include/analytics/Analytics.h"
+#include "include/data/NewsDataHandler.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
     hft_system::Log::init();
 
-    try {
+    try
+    {
         hft_system::Config config = hft_system::ConfigParser::parse("config.json");
         auto event_bus = std::make_shared<hft_system::EventBus>();
 
@@ -40,15 +43,17 @@ int main(int argc, char** argv) {
         auto risk_manager = std::make_shared<hft_system::RiskManager>(event_bus, "RiskManager", config);
         auto execution_handler = std::make_shared<hft_system::ExecutionHandler>(event_bus, "ExecutionHandler", config.execution);
         auto analytics = std::make_shared<hft_system::Analytics>(event_bus, "Analytics", config.analytics);
+        auto news_handler = std::make_shared<hft_system::NewsDataHandler>(event_bus, "NewsHandler");
 
         // ... Load strategies ...
 
         std::promise<void> backtest_complete_promise;
         std::future<void> backtest_complete_future = backtest_complete_promise.get_future();
         event_bus->subscribe(hft_system::EventType::SYSTEM,
-            [&](const hft_system::Event& event) {
-                backtest_complete_promise.set_value();
-            });
+                             [&](const hft_system::Event &event)
+                             {
+                                 backtest_complete_promise.set_value();
+                             });
 
         // Start all components
         event_bus->start();
@@ -57,7 +62,7 @@ int main(int argc, char** argv) {
         risk_manager->start();
         execution_handler->start();
         analytics->start();
-        
+
         // This is a simplified but effective synchronization point
         // It gives threads a moment to initialize before data flows.
         hft_system::Log::get_logger()->info("Allowing 100ms for components to initialize...");
@@ -67,7 +72,7 @@ int main(int argc, char** argv) {
         data_handler->start(); // Start the data producer last
 
         backtest_complete_future.get();
-        
+
         analytics->generate_report(portfolio_manager->get_trade_log());
 
         // Shutdown
@@ -80,8 +85,9 @@ int main(int argc, char** argv) {
         event_bus->stop();
 
         hft_system::Log::get_logger()->info("--- System Shutdown Complete ---");
-
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception &e)
+    {
         hft_system::Log::get_logger()->critical("Fatal Application Error: {}", e.what());
     }
 
