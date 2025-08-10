@@ -1,14 +1,11 @@
 #include "../../include/api/APIServer.h"
 #include "../../include/core/Log.h"
+#include "../../include/core/Utils.h"
+#include <sstream> // Include for std::stringstream
+#include <iomanip> // Include for std::fixed and std::setprecision
 
 namespace hft_system
 {
-
-    // **THE FIX IS HERE:** Add the fail helper function for logging errors.
-    void fail(beast::error_code ec, char const *what)
-    {
-        Log::get_logger()->error("{}: {}", what, ec.message());
-    }
 
     APIServer::APIServer(Application &app, const std::string &address, unsigned short port)
         : app_(app), acceptor_(ioc_, {net::ip::make_address(address), port}) {}
@@ -80,18 +77,14 @@ namespace hft_system
             app_.stop();
             res.body() = R"({"message":"Backtester stopped"})";
         }
-        else if (req.method() == http::verb::get && req.target() == "/status")
-        {
-            res.body() = R"({"status":"running"})";
-        }
         else if (req.method() == http::verb::get && req.target() == "/report")
         {
             Log::get_logger()->info("API: Received /report request.");
             auto report_data = app_.get_analytics_report();
 
-            // **THE FIX IS HERE:** Manually build the JSON response string.
+            // Manually build the JSON response string.
             std::stringstream ss;
-            ss << "{";
+            ss << std::fixed << std::setprecision(4) << "{";
             for (auto it = report_data.begin(); it != report_data.end(); ++it)
             {
                 ss << "\"" << it->first << "\":" << it->second;

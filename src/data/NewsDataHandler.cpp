@@ -9,10 +9,26 @@
 namespace hft_system
 {
 
-    // ... (The calculate_sentiment function is the same as before) ...
     double calculate_sentiment(const std::string &headline)
     {
-        // ...
+        double score = 0.0;
+        std::vector<std::string> positive_words = {"record", "high", "beats", "launches", "optimistic", "strong"};
+        std::vector<std::string> negative_words = {"misses", "low", "plunges", "investigation", "fears", "weak"};
+
+        std::string lower_headline = headline;
+        std::transform(lower_headline.begin(), lower_headline.end(), lower_headline.begin(), ::tolower);
+
+        for (const auto &word : positive_words)
+        {
+            if (lower_headline.find(word) != std::string::npos)
+                score += 0.5;
+        }
+        for (const auto &word : negative_words)
+        {
+            if (lower_headline.find(word) != std::string::npos)
+                score -= 0.5;
+        }
+        return std::clamp(score, -1.0, 1.0);
     }
 
     NewsDataHandler::NewsDataHandler(std::shared_ptr<EventBus> event_bus, std::string name)

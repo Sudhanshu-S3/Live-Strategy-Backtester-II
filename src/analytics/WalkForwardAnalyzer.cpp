@@ -6,7 +6,7 @@
 #include <chrono>
 #include <sstream>
 #include <iomanip>
-
+#include <numeric>
 namespace hft_system
 {
 

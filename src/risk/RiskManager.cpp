@@ -5,10 +5,10 @@
 namespace hft_system
 {
 
-    RiskManager::RiskManager(std::shared_ptr<EventBus> event_bus, std::string name, const Config &config)
-        // **THE FIX IS HERE:** Initialize equity and cash directly from the config
+    RiskManager::RiskManager(std::shared_ptr<EventBus> event_bus, std::string name, const Config &config, std::shared_ptr<MLModelManager> ml_manager)
         : Component(event_bus, std::move(name)),
           risk_config_(config.risk),
+          ml_manager_(ml_manager),
           latest_equity_(config.initial_capital),
           latest_cash_(config.initial_capital)
     {
@@ -39,31 +39,33 @@ namespace hft_system
     void RiskManager::on_signal(const Event &event)
     {
         const auto &signal = static_cast<const SignalEvent &>(event);
-
-        // **THE FIX IS HERE:** Check if the price exists before using it.
         if (latest_prices_.find(signal.symbol) == latest_prices_.end())
         {
-            Log::get_logger()->warn("{}: Rejecting signal for {}. No market price available.", name_, signal.symbol);
-            return;
+            return; // No market price available yet
         }
         double market_price = latest_prices_.at(signal.symbol);
 
-        double risk_amount = latest_equity_ * risk_config_.risk_per_trade_pct;
-        int quantity = static_cast<int>(risk_amount / market_price);
+        // --- NEW DYNAMIC SIZING LOGIC ---
+        double base_risk_amount = latest_equity_ * risk_config_.risk_per_trade_pct;
+        double final_risk_amount = base_risk_amount;
+
+        if (risk_config_.use_dynamic_sizing && ml_manager_)
+        {
+            double confidence = ml_manager_->get_trade_confidence(signal.symbol);
+            Log::get_logger()->info("{}: ML Model confidence for {} is {:.2f}", name_, signal.symbol, confidence);
+            // Adjust risk based on model confidence (e.g., take less risk on low-confidence trades)
+            final_risk_amount *= confidence;
+        }
+
+        int quantity = static_cast<int>(final_risk_amount / market_price);
+        // --- END NEW LOGIC ---
 
         if (quantity <= 0)
-        {
-            Log::get_logger()->info("{}: Calculated quantity is zero for {}. No order.", name_, signal.symbol);
             return;
-        }
-
         if (quantity * market_price > latest_cash_)
-        {
-            Log::get_logger()->warn("{}: Rejecting signal for {}. Insufficient cash.", name_, signal.symbol);
             return;
-        }
 
-        Log::get_logger()->info("{}: Signal for {} approved. Sized to {} units.", name_, signal.symbol, quantity);
+        Log::get_logger()->info("{}: Signal for {} approved. Dynamically sized to {} units.", name_, signal.symbol, quantity);
         auto order = std::make_shared<OrderEvent>(signal.symbol, signal.direction, quantity, market_price);
         event_bus_->publish(order);
     }

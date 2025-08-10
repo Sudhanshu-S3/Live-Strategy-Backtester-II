@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+
 namespace hft_system
 {
 
@@ -30,6 +31,7 @@ namespace hft_system
     struct RiskConfig
     {
         double risk_per_trade_pct = 0.01;
+        bool use_dynamic_sizing = true;
     };
 
     struct AnalyticsConfig
@@ -56,19 +58,26 @@ namespace hft_system
         std::string host;
         int port;
         std::string target;
-        std::string symbol; // Add this line
+        std::string symbol;
     };
+
     struct OptimizationParams
     {
         std::string strategy_name;
         std::map<std::string, std::vector<double>> param_ranges;
     };
+
     struct WalkForwardConfig
     {
         std::string start_date;
         std::string end_date;
         int in_sample_days;
         int out_of_sample_days;
+    };
+
+    struct MLConfig
+    {
+        std::string model_path;
     };
 
     struct Config
@@ -83,6 +92,7 @@ namespace hft_system
         WebSocketConfig websocket;
         OptimizationParams optimization;
         WalkForwardConfig walk_forward;
+        MLConfig machine_learning;
     };
 
 } // namespace hft_system

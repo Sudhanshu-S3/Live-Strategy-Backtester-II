@@ -6,7 +6,6 @@ add_library(hft_system_core
     config/ConfigParser.cpp
     data/HistoricCSVDataHandler.cpp
     data/WebSocketDataHandler.cpp
-    data/NewsDataHandler.cpp
     strategy/Strategy.cpp
     strategy/BuyEveryTickStrategy.cpp
     strategy/OrderBookImbalanceStrategy.cpp
@@ -15,11 +14,11 @@ add_library(hft_system_core
     execution/ExecutionHandler.cpp
     analytics/Analytics.cpp
     analytics/MarketRegimeDetector.cpp
-    analytics/MonteCarloSimulator.cpp 
+    analytics/MonteCarloSimulator.cpp
     analytics/Optimizer.cpp
     analytics/WalkForwardAnalyzer.cpp
+    analytics/MLModelManager.cpp
     api/APIServer.cpp
-    
 )
 
 target_include_directories(hft_system_core PUBLIC
