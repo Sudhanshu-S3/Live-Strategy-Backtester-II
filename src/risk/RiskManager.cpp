@@ -6,7 +6,11 @@ namespace hft_system
 {
 
     RiskManager::RiskManager(std::shared_ptr<EventBus> event_bus, std::string name, const Config &config)
-        : Component(event_bus, std::move(name)), risk_config_(config.risk), latest_equity_(config.initial_capital), latest_cash_(config.initial_capital)
+        // **THE FIX IS HERE:** Initialize equity and cash directly from the config
+        : Component(event_bus, std::move(name)),
+          risk_config_(config.risk),
+          latest_equity_(config.initial_capital),
+          latest_cash_(config.initial_capital)
     {
 
         using namespace std::placeholders;

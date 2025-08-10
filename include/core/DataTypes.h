@@ -35,5 +35,14 @@ namespace hft_system
         std::vector<OrderBookLevel> asks;
     };
 
+    struct Trade
+    {
+        std::string symbol;
+        OrderDirection direction;
+        double entry_price;
+        double exit_price;
+        int quantity;
+        double pnl;
+    };
 } // namespace hft_system
 #endif // HFT_SYSTEM_DATATYPES_H

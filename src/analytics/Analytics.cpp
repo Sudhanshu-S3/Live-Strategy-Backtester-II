@@ -16,15 +16,8 @@ namespace hft_system
         event_bus_->subscribe(EventType::PORTFOLIO_UPDATE, std::bind(&Analytics::on_portfolio_update, this, _1));
     }
 
-    void Analytics::start()
-    {
-        Log::get_logger()->info("{} started.", name_);
-    }
-
-    void Analytics::stop()
-    {
-        Log::get_logger()->info("{} stopped.", name_);
-    }
+    void Analytics::start() { Log::get_logger()->info("{} started.", name_); }
+    void Analytics::stop() { Log::get_logger()->info("{} stopped.", name_); }
 
     void Analytics::on_portfolio_update(const Event &event)
     {
@@ -32,44 +25,79 @@ namespace hft_system
         equity_curve_.push_back(update.total_equity);
     }
 
-    void Analytics::generate_report()
+    std::map<std::string, double> Analytics::generate_report(const std::list<Trade> &trade_log)
     {
+        std::map<std::string, double> report;
         if (equity_curve_.size() < 2)
         {
             Log::get_logger()->warn("Not enough data to generate a performance report.");
-            return;
+            return report;
         }
-
-        Log::get_logger()->info("--- PERFORMANCE REPORT ---");
 
         double initial_equity = equity_curve_.front();
         double final_equity = equity_curve_.back();
-        double total_return_pct = ((final_equity / initial_equity) - 1.0) * 100.0;
 
-        Log::get_logger()->info("Initial Equity: ${:.2f}", initial_equity);
-        Log::get_logger()->info("Final Equity:   ${:.2f}", final_equity);
-        Log::get_logger()->info("Total Return:   {:.2f}%", total_return_pct);
+        report["initial_equity"] = initial_equity;
+        report["final_equity"] = final_equity;
+        report["total_return_pct"] = ((final_equity / initial_equity) - 1.0) * 100.0;
 
-        if (config_.calculate_max_drawdown)
+        // Max Drawdown
+        double max_drawdown = 0.0, peak = equity_curve_[0];
+        for (double equity : equity_curve_)
         {
-            double max_drawdown = 0.0;
-            double peak = equity_curve_[0];
-            for (double equity : equity_curve_)
-            {
-                if (equity > peak)
-                {
-                    peak = equity;
-                }
-                double drawdown = (peak - equity) / peak;
-                if (drawdown > max_drawdown)
-                {
-                    max_drawdown = drawdown;
-                }
-            }
-            Log::get_logger()->info("Max Drawdown:   {:.2f}%", max_drawdown * 100.0);
+            peak = std::max(peak, equity);
+            max_drawdown = std::max(max_drawdown, (peak - equity) / peak);
+        }
+        report["max_drawdown_pct"] = max_drawdown * 100.0;
+
+        // Sharpe & Sortino Ratios
+        std::vector<double> returns;
+        for (size_t i = 1; i < equity_curve_.size(); ++i)
+        {
+            returns.push_back((equity_curve_[i] / equity_curve_[i - 1]) - 1.0);
         }
 
-        Log::get_logger()->info("--------------------------");
+        if (returns.size() > 1)
+        {
+            double sum = std::accumulate(returns.begin(), returns.end(), 0.0);
+            double mean = sum / returns.size();
+            double sq_sum = std::inner_product(returns.begin(), returns.end(), returns.begin(), 0.0);
+            double stdev = std::sqrt(sq_sum / returns.size() - mean * mean);
+            report["sharpe_ratio"] = (stdev > 1e-9) ? (mean / stdev) * std::sqrt(252) : 0.0;
+
+            double downside_sq_sum = 0.0;
+            for (double r : returns)
+            {
+                if (r < 0)
+                    downside_sq_sum += r * r;
+            }
+            double downside_dev = std::sqrt(downside_sq_sum / returns.size());
+            report["sortino_ratio"] = (downside_dev > 1e-9) ? (mean / downside_dev) * std::sqrt(252) : 0.0;
+        }
+
+        // Trade-Level Analysis
+        if (!trade_log.empty())
+        {
+            int winning_trades = 0;
+            double total_profit = 0.0, total_loss = 0.0;
+            for (const auto &trade : trade_log)
+            {
+                if (trade.pnl > 0)
+                {
+                    winning_trades++;
+                    total_profit += trade.pnl;
+                }
+                else
+                {
+                    total_loss += trade.pnl;
+                }
+            }
+            report["total_trades"] = trade_log.size();
+            report["win_rate_pct"] = (double)winning_trades / trade_log.size() * 100.0;
+            report["profit_factor"] = (total_loss != 0) ? std::abs(total_profit / total_loss) : 0.0;
+        }
+
+        return report;
     }
 
 } // namespace hft_system

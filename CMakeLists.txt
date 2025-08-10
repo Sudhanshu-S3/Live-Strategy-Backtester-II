@@ -34,6 +34,16 @@ FetchContent_MakeAvailable(googletest)
 FetchContent_Declare(simdjson GIT_REPOSITORY https://github.com/simdjson/simdjson.git GIT_TAG v3.9.5)
 FetchContent_MakeAvailable(simdjson)
 
+FetchContent_Declare(
+    boost_beast
+    GIT_REPOSITORY https://github.com/boostorg/beast.git
+    GIT_TAG        boost-1.74.0
+)
+FetchContent_GetProperties(boost_beast)
+if(NOT boost_beast_POPULATED)
+    FetchContent_Populate(boost_beast)
+endif()
+
 # =============================================================================
 # Project Structure & Main Executable
 # =============================================================================

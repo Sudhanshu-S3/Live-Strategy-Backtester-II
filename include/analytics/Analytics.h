@@ -3,7 +3,11 @@
 
 #include "../core/Component.h"
 #include "../config/Config.h"
+#include "../core/DataTypes.h"
 #include <vector>
+#include <list>
+#include <map>
+#include <string>
 
 namespace hft_system
 {
@@ -16,7 +20,8 @@ namespace hft_system
         void start() override;
         void stop() override;
 
-        void generate_report();
+        // This now returns a map of key-value metrics.
+        std::map<std::string, double> generate_report(const std::list<Trade> &trade_log);
 
     private:
         void on_portfolio_update(const Event &event);
@@ -26,5 +31,4 @@ namespace hft_system
     };
 
 } // namespace hft_system
-
 #endif // HFT_SYSTEM_ANALYTICS_H

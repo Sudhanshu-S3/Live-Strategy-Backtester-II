@@ -18,6 +18,7 @@ add_library(hft_system_core
 
 target_include_directories(hft_system_core PUBLIC
     "${PROJECT_SOURCE_DIR}/include"
+    "${boost_beast_SOURCE_DIR}/include"
 )
 
 target_link_libraries(hft_system_core PUBLIC
@@ -25,4 +26,5 @@ target_link_libraries(hft_system_core PUBLIC
     simdjson::simdjson
     Boost::system
     Boost::thread
+    
 )

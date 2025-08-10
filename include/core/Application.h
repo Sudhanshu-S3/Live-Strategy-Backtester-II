@@ -26,6 +26,7 @@ namespace hft_system
 
         void run();
         void stop();
+        std::map<std::string, double> get_analytics_report();
 
     private:
         void main_loop();

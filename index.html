@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HFT System Control</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+            padding: 2rem;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background-color: #252526;
+        }
+
+        h1 {
+            color: #569cd6;
+        }
+
+        button {
+            background-color: #0e639c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #1577b8;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-family: monospace;
+            background-color: #111;
+            padding: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>HFT System Control Panel</h1>
+        <div>
+            <button id="startButton">Start Backtest</button>
+            <button id="stopButton">Stop Backtest</button>
+            <button id="statusButton">Get Status</button>
+        </div>
+        <div id="status">Status: Idle</div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+        const statusDiv = document.getElementById('status');
+
+        // --- Start Button ---
+        document.getElementById('startButton').addEventListener('click', () => {
+            fetch(`${API_URL}/start`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Start response:', data);
+                    statusDiv.textContent = `Status: ${data.message}`;
+                })
+                .catch(error => {
+                    console.error('Error starting:', error);
+                    statusDiv.textContent = 'Error: Could not connect to server.';
+                });
+        });
+
+        // --- Stop Button ---
+        document.getElementById('stopButton').addEventListener('click', () => {
+            fetch(`${API_URL}/stop`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Stop response:', data);
+                    statusDiv.textContent = `Status: ${data.message}`;
+                })
+                .catch(error => {
+                    console.error('Error stopping:', error);
+                    statusDiv.textContent = 'Error: Could not connect to server.';
+                });
+        });
+
+        // --- Status Button ---
+        document.getElementById('statusButton').addEventListener('click', () => {
+            fetch(`${API_URL}/status`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Status response:', data);
+                    statusDiv.textContent = `Status: ${data.status}`;
+                })
+                .catch(error => {
+                    console.error('Error getting status:', error);
+                    statusDiv.textContent = 'Error: Could not connect to server.';
+                });
+        });
+    </script>
+</body>
+
+</html>

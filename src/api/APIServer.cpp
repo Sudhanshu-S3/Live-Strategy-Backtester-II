@@ -65,6 +65,7 @@ namespace hft_system
         http::response<http::string_body> res{http::status::ok, req.version()};
         res.set(http::field::server, "HFT_System");
         res.set(http::field::content_type, "application/json");
+        res.set(http::field::access_control_allow_origin, "*");
         res.keep_alive(req.keep_alive());
 
         if (req.method() == http::verb::post && req.target() == "/start")
@@ -82,6 +83,25 @@ namespace hft_system
         else if (req.method() == http::verb::get && req.target() == "/status")
         {
             res.body() = R"({"status":"running"})";
+        }
+        else if (req.method() == http::verb::get && req.target() == "/report")
+        {
+            Log::get_logger()->info("API: Received /report request.");
+            auto report_data = app_.get_analytics_report();
+
+            // **THE FIX IS HERE:** Manually build the JSON response string.
+            std::stringstream ss;
+            ss << "{";
+            for (auto it = report_data.begin(); it != report_data.end(); ++it)
+            {
+                ss << "\"" << it->first << "\":" << it->second;
+                if (std::next(it) != report_data.end())
+                {
+                    ss << ",";
+                }
+            }
+            ss << "}";
+            res.body() = ss.str();
         }
         else
         {

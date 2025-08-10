@@ -1,6 +1,7 @@
 #include "../../include/core/PortfolioManager.h"
 #include "../../include/core/Log.h"
 #include <functional>
+#include <algorithm> // For std::min
 
 using hft_system::OrderDirection;
 
@@ -12,14 +13,12 @@ namespace hft_system
     {
 
         using namespace std::placeholders;
-        // The PortfolioManager now only needs to listen for FillEvents.
         event_bus_->subscribe(EventType::FILL, std::bind(&PortfolioManager::on_fill, this, _1));
     }
 
     void PortfolioManager::start()
     {
         Log::get_logger()->info("{} started.", name_);
-        // Publish the initial portfolio state
         auto initial_update = std::make_shared<PortfolioUpdateEvent>(capital_, cash_);
         event_bus_->publish(initial_update);
     }
@@ -32,11 +31,8 @@ namespace hft_system
     void PortfolioManager::on_fill(const Event &event)
     {
         const auto &fill = static_cast<const FillEvent &>(event);
-        Log::get_logger()->info("{}: Received fill for {} {} {} at ${}. Commission: ${}",
-                                name_, fill.direction == OrderDirection::BUY ? "BUY" : "SELL",
-                                fill.quantity, fill.symbol, fill.fill_price, fill.commission);
 
-        // Update our cash based on the trade, including commission
+        // Update cash first
         double cost = fill.fill_price * fill.quantity;
         if (fill.direction == OrderDirection::BUY)
         {
@@ -47,11 +43,54 @@ namespace hft_system
             cash_ += (cost - fill.commission);
         }
 
-        Log::get_logger()->info("{}: Cash updated to ${}", name_, cash_);
+        // Update positions and log trades
+        Position &position = positions_[fill.symbol];
+        bool is_closing_trade = (position.quantity != 0) && (fill.direction != position.direction);
 
-        // After updating state, publish the new portfolio status.
-        // A full implementation would add the market value of all positions to cash_ to get total_equity.
-        double total_equity = cash_;
+        if (is_closing_trade)
+        {
+            Trade trade;
+            trade.symbol = fill.symbol;
+            trade.direction = position.direction;
+            trade.quantity = std::min(position.quantity, fill.quantity);
+            trade.entry_price = position.entry_price;
+            trade.exit_price = fill.fill_price;
+
+            if (trade.direction == OrderDirection::BUY)
+            { // Closing a long position
+                trade.pnl = (trade.exit_price - trade.entry_price) * trade.quantity - fill.commission;
+            }
+            else
+            { // Closing a short position
+                trade.pnl = (trade.entry_price - trade.exit_price) * trade.quantity - fill.commission;
+            }
+            trade_log_.push_back(trade);
+            Log::get_logger()->info("Closed trade for {}. P&L: ${:.2f}", trade.symbol, trade.pnl);
+
+            position.quantity -= trade.quantity;
+            if (position.quantity == 0)
+            {
+                positions_.erase(fill.symbol);
+            }
+        }
+        else
+        { // Opening or increasing a position
+            double total_value = (position.entry_price * position.quantity) + cost;
+            position.quantity += fill.quantity;
+            position.entry_price = total_value / position.quantity;
+            position.direction = fill.direction;
+            position.symbol = fill.symbol;
+        }
+
+        // Simplification: Equity is cash + value of open positions at entry cost.
+        // A more advanced version would use the latest market price.
+        double open_positions_value = 0;
+        for (const auto &[symbol, pos] : positions_)
+        {
+            open_positions_value += pos.quantity * pos.entry_price;
+        }
+        double total_equity = cash_ + open_positions_value;
+
         auto update_event = std::make_shared<PortfolioUpdateEvent>(total_equity, cash_);
         event_bus_->publish(update_event);
     }
