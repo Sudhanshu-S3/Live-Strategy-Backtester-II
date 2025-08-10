@@ -6,9 +6,10 @@
     "data_file": "tests/data/order_book_data.csv"
   },
   "websocket": {
-    "host": "localhost",
-    "port": 9001,
-    "target": "/"
+    "host": "stream.binance.com",
+    "port": 9443,
+    "target": "/ws",
+    "symbol": "btcusdt"
   },
   "strategies": [
     {

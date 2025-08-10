@@ -1,15 +1,11 @@
 #include "../../include/data/WebSocketDataHandler.h"
 #include "../../include/core/Log.h"
 #include "simdjson.h"
+#include <algorithm>
+#include "../../include/core/Utils.h"
 
 namespace hft_system
 {
-
-    // Helper function to report errors
-    void fail(beast::error_code ec, char const *what)
-    {
-        Log::get_logger()->error("{}: {}", what, ec.message());
-    }
 
     WebSocketDataHandler::WebSocketDataHandler(std::shared_ptr<EventBus> event_bus, const WebSocketConfig &config)
         : DataHandler(event_bus, "WebSocketDataHandler"),
@@ -35,8 +31,8 @@ namespace hft_system
     {
         if (!ioc_.stopped())
         {
-            ioc_.post([this]()
-                      {
+            net::dispatch(ioc_, [this]()
+                          {
             beast::error_code ec;
             ws_.close(websocket::close_code::normal, ec);
             if (ec) fail(ec, "close"); });
@@ -53,7 +49,6 @@ namespace hft_system
     {
         if (ec)
             return fail(ec, "resolve");
-
         net::async_connect(
             beast::get_lowest_layer(ws_),
             results.begin(), results.end(),
@@ -64,13 +59,11 @@ namespace hft_system
     {
         if (ec)
             return fail(ec, "connect");
-
         if (!SSL_set_tlsext_host_name(ws_.next_layer().native_handle(), config_.host.c_str()))
         {
             ec = beast::error_code(static_cast<int>(ERR_get_error()), net::error::get_ssl_category());
             return fail(ec, "set_sni");
         }
-
         ws_.next_layer().async_handshake(ssl::stream_base::client,
                                          beast::bind_front_handler(&WebSocketDataHandler::on_ssl_handshake, shared_from_this()));
     }
@@ -89,14 +82,27 @@ namespace hft_system
             return fail(ec, "handshake");
         Log::get_logger()->info("WebSocket Handshake successful.");
 
-        ws_.async_read(buffer_, beast::bind_front_handler(&WebSocketDataHandler::on_read, shared_from_this()));
+        // **THE FIX IS HERE:** Manually build the JSON subscription string.
+        std::string symbol_lower = config_.symbol;
+        std::transform(symbol_lower.begin(), symbol_lower.end(), symbol_lower.begin(),
+                       [](unsigned char c)
+                       { return std::tolower(c); });
+
+        std::string subscribe_msg =
+            R"({"method":"SUBSCRIBE","params":[")" +
+            symbol_lower +
+            R"(@depth"],"id":1})";
+
+        Log::get_logger()->info("Sending subscription message: {}", subscribe_msg);
+
+        ws_.async_write(net::buffer(subscribe_msg),
+                        beast::bind_front_handler(&WebSocketDataHandler::on_write, shared_from_this()));
     }
 
     void WebSocketDataHandler::on_write(beast::error_code ec, std::size_t)
     {
         if (ec)
             return fail(ec, "write");
-        buffer_.clear();
         ws_.async_read(buffer_, beast::bind_front_handler(&WebSocketDataHandler::on_read, shared_from_this()));
     }
 
@@ -106,7 +112,6 @@ namespace hft_system
             return fail(ec, "read");
 
         std::string message = beast::buffers_to_string(buffer_.data());
-        Log::get_logger()->trace("Received WS message: {}", message);
         process_message(message);
 
         buffer_.consume(buffer_.size());
@@ -122,7 +127,63 @@ namespace hft_system
 
     void WebSocketDataHandler::process_message(const std::string &message)
     {
-        // Placeholder for simdjson parsing and publishing OrderBookEvents
+        // This is the production-ready parsing logic from a previous step
+        try
+        {
+            simdjson::ondemand::parser parser;
+            simdjson::ondemand::document doc = parser.iterate(message);
+
+            // Check for subscription confirmation
+            if (doc.find_field("result").error() == simdjson::SUCCESS)
+            {
+                Log::get_logger()->info("Subscription confirmed.");
+                return;
+            }
+
+            // For streaming data, Binance nests it
+            simdjson::ondemand::object data;
+            if (doc["data"].get_object().get(data) != simdjson::SUCCESS)
+            {
+                return; // Not a data message we are interested in
+            }
+
+            std::string_view event_type;
+            if (data["e"].get_string().get(event_type) != simdjson::SUCCESS || event_type != "depthUpdate")
+                return;
+
+            OrderBook book;
+            std::string_view symbol_sv;
+            data["s"].get_string().get(symbol_sv);
+            book.symbol = symbol_sv;
+            book.timestamp = data["E"].get_int64();
+
+            // Parse bids
+            for (auto bid_level : data["b"].get_array())
+            {
+                auto level_array = bid_level.get_array();
+                double price = std::stod(std::string(level_array.at(0).get_string().value()));
+                double qty = std::stod(std::string(level_array.at(1).get_string().value()));
+                if (qty > 1e-9)
+                    book.bids.push_back({price, qty});
+            }
+
+            // Parse asks
+            for (auto ask_level : data["a"].get_array())
+            {
+                auto level_array = ask_level.get_array();
+                double price = std::stod(std::string(level_array.at(0).get_string().value()));
+                double qty = std::stod(std::string(level_array.at(1).get_string().value()));
+                if (qty > 1e-9)
+                    book.asks.push_back({price, qty});
+            }
+
+            auto ob_event = std::make_shared<OrderBookEvent>(book);
+            event_bus_->publish(ob_event);
+        }
+        catch (const std::exception &e)
+        {
+            Log::get_logger()->error("Error parsing WebSocket message: {}", e.what());
+        }
     }
 
 } // namespace hft_system

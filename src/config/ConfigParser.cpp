@@ -46,15 +46,19 @@ namespace hft_system
         simdjson::ondemand::object ws_obj;
         if (doc["websocket"].get_object().get(ws_obj) == simdjson::SUCCESS)
         {
-            std::string_view host, target;
+            std::string_view host, target, symbol; // Add symbol here
             ws_obj["host"].get_string().get(host);
 
-            // **THE FIX IS HERE:** Use a temporary int64_t variable for parsing.
             int64_t port_val;
             ws_obj["port"].get_int64().get(port_val);
             config.websocket.port = static_cast<int>(port_val);
 
             ws_obj["target"].get_string().get(target);
+
+            // Add these two lines to parse the symbol
+            ws_obj["symbol"].get_string().get(symbol);
+            config.websocket.symbol = symbol;
+
             config.websocket.host = host;
             config.websocket.target = target;
         }

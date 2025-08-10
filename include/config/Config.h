@@ -54,6 +54,7 @@ namespace hft_system
         std::string host;
         int port;
         std::string target;
+        std::string symbol; // Add this line
     };
 
     struct Config
