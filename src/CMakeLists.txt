@@ -14,6 +14,8 @@ add_library(hft_system_core
     risk/RiskManager.cpp
     execution/ExecutionHandler.cpp
     analytics/Analytics.cpp
+    analytics/MarketRegimeDetector.cpp
+    analytics/MonteCarloSimulator.cpp 
     api/APIServer.cpp
     
 )

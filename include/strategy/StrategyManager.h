@@ -23,7 +23,8 @@ namespace hft_system
     private:
         void on_market_event(const Event &event);
         void on_order_book_event(const Event &event);
-        void on_news_event(const Event &event); // Add this missing declaration
+        void on_news_event(const Event &event);
+        void on_market_regime_event(const Event &event);// Add this missing declaration
 
         std::vector<std::unique_ptr<Strategy>> strategies_;
     };

@@ -17,8 +17,26 @@ namespace hft_system
         ORDER,
         FILL,
         PORTFOLIO_UPDATE,
-        NEWS, // Add this new event type
+        NEWS,
+        MARKET_REGIME_CHANGED, // Add this
         SYSTEM
+    };
+
+    // This struct holds the current market state
+    struct MarketState
+    {
+        enum class Volatility
+        {
+            LOW,
+            NORMAL,
+            HIGH
+        } volatility = Volatility::NORMAL;
+        enum class Trend
+        {
+            SIDEWAYS,
+            TRENDING_UP,
+            TRENDING_DOWN
+        } trend = Trend::SIDEWAYS;
     };
 
     struct Event
@@ -35,6 +53,13 @@ namespace hft_system
         long long timestamp;
     };
 
+    // --- ADD THIS NEW EVENT ---
+    struct MarketRegimeChangedEvent : public Event
+    {
+        MarketRegimeChangedEvent(MarketState new_state)
+            : Event(EventType::MARKET_REGIME_CHANGED), state(new_state) {}
+        const MarketState state;
+    };
     // --- ADD THIS NEW EVENT STRUCT ---
     struct NewsEvent : public Event
     {
