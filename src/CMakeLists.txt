@@ -16,6 +16,8 @@ add_library(hft_system_core
     analytics/Analytics.cpp
     analytics/MarketRegimeDetector.cpp
     analytics/MonteCarloSimulator.cpp 
+    analytics/Optimizer.cpp
+    analytics/WalkForwardAnalyzer.cpp
     api/APIServer.cpp
     
 )

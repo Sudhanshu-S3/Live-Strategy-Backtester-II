@@ -3,14 +3,16 @@
 
 #include <string>
 #include <vector>
-
+#include <map>
 namespace hft_system
 {
 
     enum class RunMode
     {
         BACKTEST,
-        LIVE
+        LIVE,
+        OPTIMIZATION,
+        WALK_FORWARD
     };
 
     struct DataConfig
@@ -56,6 +58,18 @@ namespace hft_system
         std::string target;
         std::string symbol; // Add this line
     };
+    struct OptimizationParams
+    {
+        std::string strategy_name;
+        std::map<std::string, std::vector<double>> param_ranges;
+    };
+    struct WalkForwardConfig
+    {
+        std::string start_date;
+        std::string end_date;
+        int in_sample_days;
+        int out_of_sample_days;
+    };
 
     struct Config
     {
@@ -67,6 +81,8 @@ namespace hft_system
         AnalyticsConfig analytics;
         std::vector<StrategyConfig> strategies;
         WebSocketConfig websocket;
+        OptimizationParams optimization;
+        WalkForwardConfig walk_forward;
     };
 
 } // namespace hft_system
