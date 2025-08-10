@@ -1,0 +1,36 @@
+{
+    "run_mode": "LIVE",
+    "initial_capital": 100000.0,
+    "websocket": {
+        "host": "stream.binance.com",
+        "port": 9443,
+        "target": "/ws",
+        "symbol": "btcusdt"
+    },
+    "strategies": [
+        {
+            "name": "ORDER_BOOK_IMBALANCE",
+            "symbol": "BTCUSDT",
+            "params": {
+                "lookback_levels": 10,
+                "imbalance_threshold": 1.2
+            }
+        }
+    ],
+    "risk": {
+        "risk_per_trade_pct": 0.01,
+        "use_dynamic_sizing": true
+    },
+    "machine_learning": {
+        "model_path": "models/confidence_model.placeholder"
+    },
+    "data": {},
+    "execution": {
+        "commission_pct": 0.001,
+        "slippage_pct": 0.0005
+    },
+    "analytics": {
+        "calculate_sharpe": true,
+        "calculate_max_drawdown": true
+    }
+}

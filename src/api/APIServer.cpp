@@ -96,6 +96,23 @@ namespace hft_system
             ss << "}";
             res.body() = ss.str();
         }
+        else if (req.method() == http::verb::get && req.target() == "/pnl")
+        {
+            Log::get_logger()->info("API: Received /pnl request.");
+            auto pnl_data = app_.get_pnl_snapshot();
+            std::stringstream ss;
+            ss << std::fixed << std::setprecision(4) << "{";
+            for (auto it = pnl_data.begin(); it != pnl_data.end(); ++it)
+            {
+                ss << "\"" << it->first << "\":" << it->second;
+                if (std::next(it) != pnl_data.end())
+                {
+                    ss << ",";
+                }
+            }
+            ss << "}";
+            res.body() = ss.str();
+        }
         else
         {
             res.result(http::status::not_found);

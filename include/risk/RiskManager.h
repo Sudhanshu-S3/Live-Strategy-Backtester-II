@@ -3,35 +3,32 @@
 
 #include "../core/Component.h"
 #include "../config/Config.h"
-#include "../analytics/MLModelManager.h" // Include MLModelManager
+#include "../analytics/MLModelManager.h"
 #include <map>
-#include <memory> // For std::shared_ptr
+#include <memory>
 
-namespace hft_system
-{
+namespace hft_system {
 
-    class RiskManager : public Component
-    {
-    public:
-        // The constructor now takes a shared_ptr to the MLModelManager
-        RiskManager(std::shared_ptr<EventBus> event_bus, std::string name, const Config &config, std::shared_ptr<MLModelManager> ml_manager);
+class RiskManager : public Component {
+public:
+    RiskManager(std::shared_ptr<EventBus> event_bus, std::string name, const Config& config, std::shared_ptr<MLModelManager> ml_manager);
 
-        void start() override;
-        void stop() override;
+    void start() override;
+    void stop() override;
 
-    private:
-        void on_signal(const Event &event);
-        void on_market(const Event &event);
-        void on_portfolio_update(const Event &event);
+private:
+    void on_signal(const Event& event);
+    void on_market(const Event& event);
+    void on_portfolio_update(const Event& event);
+    // Add a handler for order book events
+    void on_order_book(const Event& event);
 
-        RiskConfig risk_config_;
-        std::shared_ptr<MLModelManager> ml_manager_; // Store a pointer to the ML manager
-
-        // Cached state
-        double latest_equity_ = 0.0;
-        double latest_cash_ = 0.0;
-        std::map<std::string, double> latest_prices_;
-    };
+    RiskConfig risk_config_;
+    std::shared_ptr<MLModelManager> ml_manager_;
+    double latest_equity_ = 0.0;
+    double latest_cash_ = 0.0;
+    std::map<std::string, double> latest_prices_;
+};
 
 } // namespace hft_system
 #endif // HFT_SYSTEM_RISKMANAGER_H

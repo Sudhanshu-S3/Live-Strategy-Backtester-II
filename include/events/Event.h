@@ -98,31 +98,31 @@ namespace hft_system
 
     struct OrderEvent : public Event
     {
-        OrderEvent(std::string symbol, OrderDirection direction, int quantity, double market_price) // Add market_price
+        OrderEvent(std::string symbol, OrderDirection direction, double quantity, double market_price) // Changed int to double
             : Event(EventType::ORDER), symbol(std::move(symbol)), direction(direction),
               quantity(quantity), market_price(market_price)
         {
-        } // Add market_price
+        }
 
         const std::string symbol;
         const OrderDirection direction;
-        const int quantity;
-        const double market_price; // ADD THIS LINE
+        const double quantity; // Already correct
+        const double market_price;
     };
 
     struct FillEvent : public Event
     {
-        FillEvent(std::string symbol, OrderDirection direction, int quantity, double fill_price, double commission) // Add commission
+        FillEvent(std::string symbol, OrderDirection direction, double quantity, double fill_price, double commission) // Changed int to double
             : Event(EventType::FILL), symbol(std::move(symbol)), direction(direction),
               quantity(quantity), fill_price(fill_price), commission(commission)
         {
-        } // Add commission
+        }
 
         const std::string symbol;
         const OrderDirection direction;
-        const int quantity;
+        const double quantity; // Changed from int to double
         const double fill_price;
-        const double commission; // ADD THIS LINE
+        const double commission;
     };
 
     struct PortfolioUpdateEvent : public Event

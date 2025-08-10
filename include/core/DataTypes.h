@@ -41,7 +41,7 @@ namespace hft_system
         OrderDirection direction;
         double entry_price;
         double exit_price;
-        int quantity;
+        double quantity; // Changed from int to double
         double pnl;
     };
 } // namespace hft_system

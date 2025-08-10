@@ -3,6 +3,7 @@
 #include "simdjson.h"
 #include <algorithm>
 #include "../../include/core/Utils.h"
+#include <string>
 
 namespace hft_system
 {
@@ -127,38 +128,34 @@ namespace hft_system
 
     void WebSocketDataHandler::process_message(const std::string &message)
     {
-        // This is the production-ready parsing logic from a previous step
         try
         {
+            simdjson::padded_string padded_message(message);
             simdjson::ondemand::parser parser;
-            simdjson::ondemand::document doc = parser.iterate(message);
+            simdjson::ondemand::document doc = parser.iterate(padded_message);
 
-            // Check for subscription confirmation
+            // Check for subscription confirmation first
             if (doc.find_field("result").error() == simdjson::SUCCESS)
             {
                 Log::get_logger()->info("Subscription confirmed.");
                 return;
             }
 
-            // For streaming data, Binance nests it
-            simdjson::ondemand::object data;
-            if (doc["data"].get_object().get(data) != simdjson::SUCCESS)
-            {
-                return; // Not a data message we are interested in
-            }
-
+            // --- THE FIX IS HERE ---
+            // We now parse the data from the top level of the document, not a nested "data" object.
             std::string_view event_type;
-            if (data["e"].get_string().get(event_type) != simdjson::SUCCESS || event_type != "depthUpdate")
-                return;
+            if (doc["e"].get_string().get(event_type) != simdjson::SUCCESS || event_type != "depthUpdate")
+            {
+                return; // Not an order book message, ignore it.
+            }
 
             OrderBook book;
             std::string_view symbol_sv;
-            data["s"].get_string().get(symbol_sv);
+            doc["s"].get_string().get(symbol_sv);
             book.symbol = symbol_sv;
-            book.timestamp = data["E"].get_int64();
+            book.timestamp = doc["E"].get_int64();
 
-            // Parse bids
-            for (auto bid_level : data["b"].get_array())
+            for (auto bid_level : doc["b"].get_array())
             {
                 auto level_array = bid_level.get_array();
                 double price = std::stod(std::string(level_array.at(0).get_string().value()));
@@ -167,8 +164,7 @@ namespace hft_system
                     book.bids.push_back({price, qty});
             }
 
-            // Parse asks
-            for (auto ask_level : data["a"].get_array())
+            for (auto ask_level : doc["a"].get_array())
             {
                 auto level_array = ask_level.get_array();
                 double price = std::stod(std::string(level_array.at(0).get_string().value()));
@@ -176,9 +172,13 @@ namespace hft_system
                 if (qty > 1e-9)
                     book.asks.push_back({price, qty});
             }
+            // --- END OF FIX ---
 
-            auto ob_event = std::make_shared<OrderBookEvent>(book);
-            event_bus_->publish(ob_event);
+            if (!book.bids.empty() || !book.asks.empty())
+            {
+                auto ob_event = std::make_shared<OrderBookEvent>(book);
+                event_bus_->publish(ob_event);
+            }
         }
         catch (const std::exception &e)
         {

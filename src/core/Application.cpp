@@ -11,6 +11,7 @@
 #include "../../include/risk/RiskManager.h"
 #include "../../include/execution/ExecutionHandler.h"
 #include "../../include/analytics/Analytics.h"
+#include "../../include/analytics/MLModelManager.h"
 
 namespace hft_system
 {
@@ -18,8 +19,17 @@ namespace hft_system
     Application::Application(Config config)
         : config_(std::move(config))
     {
-        // We only initialize the event bus here. Other components are created in the run loops.
         event_bus_ = std::make_shared<EventBus>();
+
+        // **THE FIX IS HERE:** Create the DataHandler in the constructor, on the main thread.
+        if (config_.run_mode == RunMode::LIVE)
+        {
+            data_handler_ = std::make_shared<WebSocketDataHandler>(event_bus_, config_.websocket);
+        }
+        else
+        {
+            data_handler_ = std::make_shared<HistoricCSVDataHandler>(event_bus_, config_.data.symbol, config_.data.file_path);
+        }
     }
 
     Application::~Application()
@@ -57,35 +67,29 @@ namespace hft_system
         return {};
     }
 
-    // This is a dedicated, blocking function for a single backtest run
     std::map<std::string, double> Application::run_backtest()
     {
         main_loop();
         return get_analytics_report();
+    }
+    std::map<std::string, double> Application::get_pnl_snapshot()
+    {
+        if (portfolio_manager_)
+        {
+            return portfolio_manager_->get_pnl_summary();
+        }
+        return {};
     }
 
     void Application::main_loop()
     {
         try
         {
-            Log::get_logger()->info("Application main loop started.");
-
-            if (config_.run_mode == RunMode::LIVE)
-            {
-                data_handler_ = std::make_shared<WebSocketDataHandler>(event_bus_, config_.websocket);
-            }
-            else
-            {
-                data_handler_ = std::make_shared<HistoricCSVDataHandler>(event_bus_, config_.data.symbol, config_.data.file_path);
-            }
+            // Create all other components
             strategy_manager_ = std::make_shared<StrategyManager>(event_bus_, "StrategyManager");
             portfolio_manager_ = std::make_shared<PortfolioManager>(event_bus_, "PortfolioManager", config_.initial_capital);
-
-            // **THE FIX IS HERE:** Create the MLModelManager first...
-            auto ml_manager = std::make_shared<MLModelManager>(event_bus_, "MLModelManager", config_.machine_learning);
-            // ...and then pass it as the 4th argument to the RiskManager.
-            risk_manager_ = std::make_shared<RiskManager>(event_bus_, "RiskManager", config_, ml_manager);
-
+            ml_manager_ = std::make_shared<MLModelManager>(event_bus_, "MLModelManager", config_.machine_learning);
+            risk_manager_ = std::make_shared<RiskManager>(event_bus_, "RiskManager", config_, ml_manager_);
             execution_handler_ = std::make_shared<ExecutionHandler>(event_bus_, "ExecutionHandler", config_.execution);
             analytics_ = std::make_shared<Analytics>(event_bus_, "Analytics", config_.analytics);
 
@@ -107,11 +111,13 @@ namespace hft_system
             portfolio_manager_->start();
             strategy_manager_->start();
             risk_manager_->start();
-            ml_manager->start(); // Also start the new component
+            ml_manager_->start();
             execution_handler_->start();
             analytics_->start();
 
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            // The DataHandler is already created, so we just start it.
             data_handler_->start();
 
             if (config_.run_mode == RunMode::BACKTEST)
@@ -130,7 +136,7 @@ namespace hft_system
             analytics_->stop();
             execution_handler_->stop();
             risk_manager_->stop();
-            ml_manager->stop(); // Stop the new component
+            ml_manager_->stop();
             strategy_manager_->stop();
             portfolio_manager_->stop();
             event_bus_->stop();

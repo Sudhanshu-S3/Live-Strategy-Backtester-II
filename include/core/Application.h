@@ -19,6 +19,7 @@ namespace hft_system
     class RiskManager;
     class ExecutionHandler;
     class Analytics;
+    class MLModelManager;
 
     class Application
     {
@@ -26,13 +27,11 @@ namespace hft_system
         Application(Config config);
         ~Application();
 
-        // Add these public methods back for the API server to use
         void run();
         void stop();
         std::map<std::string, double> get_analytics_report();
-
-        // This is the main entry point for running a single backtest
         std::map<std::string, double> run_backtest();
+        std::map<std::string, double> get_pnl_snapshot();
 
     private:
         void main_loop();
@@ -45,6 +44,7 @@ namespace hft_system
         std::shared_ptr<RiskManager> risk_manager_;
         std::shared_ptr<ExecutionHandler> execution_handler_;
         std::shared_ptr<Analytics> analytics_;
+        std::shared_ptr<MLModelManager> ml_manager_; // Add this
 
         std::thread app_thread_;
         std::atomic<bool> is_running_{false};

@@ -14,6 +14,7 @@
 #include "risk/RiskManager.h"
 #include "execution/ExecutionHandler.h"
 #include "events/Event.h"
+#include "analytics/MLModelManager.h" // Add this include
 
 using namespace hft_system;
 using namespace std::chrono_literals;
@@ -28,14 +29,21 @@ protected:
 
         config.initial_capital = 100000.0;
         config.data.symbol = "TEST_STOCK";
-        // Construct the full path
-        config.data.file_path = std::string(PROJECT_SOURCE_DIR) + "/tests/data/test_market_data.csv";
+        std::string data_file_path = std::string(PROJECT_SOURCE_DIR) + "/tests/data/test_market_data.csv";
+        config.data.file_path = data_file_path;
         config.risk.risk_per_trade_pct = 0.20;
+
+        // Create the new MLManager component
+        MLConfig ml_config;
+        ml_manager = std::make_shared<MLModelManager>(event_bus, "MLModelManager", ml_config);
 
         data_handler = std::make_shared<HistoricCSVDataHandler>(event_bus, config.data.symbol, config.data.file_path);
         strategy_manager = std::make_shared<StrategyManager>(event_bus, "StrategyManager");
         portfolio_manager = std::make_shared<PortfolioManager>(event_bus, "PortfolioManager", config.initial_capital);
-        risk_manager = std::make_shared<RiskManager>(event_bus, "RiskManager", config);
+
+        // **THE FIX IS HERE:** Pass the new ml_manager to the RiskManager constructor
+        risk_manager = std::make_shared<RiskManager>(event_bus, "RiskManager", config, ml_manager);
+
         execution_handler = std::make_shared<ExecutionHandler>(event_bus, "ExecutionHandler", config.execution);
     }
 
@@ -51,6 +59,7 @@ protected:
     std::shared_ptr<PortfolioManager> portfolio_manager;
     std::shared_ptr<RiskManager> risk_manager;
     std::shared_ptr<ExecutionHandler> execution_handler;
+    std::shared_ptr<MLModelManager> ml_manager; // Add this member
 };
 
 TEST_F(IntegrationTest, FullEndToEndLoop)
@@ -70,6 +79,7 @@ TEST_F(IntegrationTest, FullEndToEndLoop)
     portfolio_manager->start();
     strategy_manager->start();
     risk_manager->start();
+    ml_manager->start(); // Start the new component
     execution_handler->start();
     data_handler->start();
 
@@ -77,6 +87,7 @@ TEST_F(IntegrationTest, FullEndToEndLoop)
 
     data_handler->stop();
     execution_handler->stop();
+    ml_manager->stop(); // Stop the new component
     risk_manager->stop();
     strategy_manager->stop();
     portfolio_manager->stop();
