@@ -19,6 +19,7 @@ add_library(hft_system_core
     analytics/WalkForwardAnalyzer.cpp
     analytics/MLModelManager.cpp
     api/APIServer.cpp
+    utils/TimerGuard.cpp
 )
 
 target_include_directories(hft_system_core PUBLIC

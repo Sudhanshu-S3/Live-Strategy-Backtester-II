@@ -1,5 +1,7 @@
 #include "../../include/core/PortfolioManager.h"
 #include "../../include/core/Log.h"
+#include "../../include/utils/Timer.h"
+#include "../../include/utils/PerformanceMonitor.h"
 #include <functional>
 #include <algorithm>
 #include <numeric>
@@ -30,6 +32,8 @@ namespace hft_system
 
     void PortfolioManager::on_fill(const Event &event)
     {
+        TIME_FUNCTION("PortfolioManager_on_fill");
+
         const auto &fill = static_cast<const FillEvent &>(event);
 
         double cost = fill.fill_price * fill.quantity;
@@ -91,7 +95,6 @@ namespace hft_system
         event_bus_->publish(update_event);
     }
 
-    // **THE FIX IS HERE:** Add the missing function definition.
     const std::list<hft_system::Trade> &PortfolioManager::get_trade_log() const
     {
         return trade_log_;

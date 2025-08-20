@@ -1,8 +1,9 @@
 #include "../../include/api/APIServer.h"
 #include "../../include/core/Log.h"
 #include "../../include/core/Utils.h"
-#include <sstream> // Include for std::stringstream
-#include <iomanip> // Include for std::fixed and std::setprecision
+#include "../../include/utils/PerformanceMonitor.h" // Include PerformanceMonitor
+#include <sstream>                                  // Include for std::stringstream
+#include <iomanip>                                  // Include for std::fixed and std::setprecision
 
 namespace hft_system
 {
@@ -110,6 +111,40 @@ namespace hft_system
                     ss << ",";
                 }
             }
+            ss << "}";
+            res.body() = ss.str();
+        }
+        else if (req.method() == http::verb::get && req.target() == "/performance")
+        {
+            Log::get_logger()->info("API: Received /performance request.");
+            auto metrics = PerformanceMonitor::get_instance().get_statistics();
+
+            // Manually build the JSON response
+            std::stringstream ss;
+            ss << "{";
+
+            bool first_metric = true;
+            for (const auto &[name, stats] : metrics)
+            {
+                if (!first_metric)
+                    ss << ",";
+                first_metric = false;
+
+                ss << "\"" << name << "\":{";
+
+                bool first_stat = true;
+                for (const auto &[stat_name, value] : stats)
+                {
+                    if (!first_stat)
+                        ss << ",";
+                    first_stat = false;
+
+                    ss << "\"" << stat_name << "\":" << value;
+                }
+
+                ss << "}";
+            }
+
             ss << "}";
             res.body() = ss.str();
         }

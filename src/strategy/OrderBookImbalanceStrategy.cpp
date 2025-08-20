@@ -1,5 +1,7 @@
 #include "../../include/strategy/OrderBookImbalanceStrategy.h"
 #include "../../include/core/Log.h"
+#include "../../include/utils/Timer.h"
+#include "../../include/utils/PerformanceMonitor.h"
 #include <numeric>
 #include <algorithm>
 
@@ -41,10 +43,11 @@ namespace hft_system
 
     std::unique_ptr<SignalEvent> OrderBookImbalanceStrategy::calculate_signal_from_order_book(const OrderBookEvent &event)
     {
+        TIME_FUNCTION("OrderBookImbalanceStrategy_calculate_signal");
+        
         if (event.book.symbol != symbol_)
             return nullptr;
 
-        // ... (Imbalance calculation is the same as before) ...
         const auto &bids = event.book.bids;
         const auto &asks = event.book.asks;
         if (bids.empty() || asks.empty())

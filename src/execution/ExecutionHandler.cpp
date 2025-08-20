@@ -1,6 +1,8 @@
 #include "../../include/execution/ExecutionHandler.h"
 #include "../../include/config/Config.h"
 #include "../../include/core/Log.h"
+#include "../../include/utils/Timer.h"
+#include "../../include/utils/PerformanceMonitor.h"
 #include <functional>
 
 using hft_system::OrderDirection;
@@ -28,6 +30,8 @@ namespace hft_system
 
     void ExecutionHandler::on_order(const Event &event)
     {
+        TIME_FUNCTION("ExecutionHandler_on_order");
+
         const auto &order = static_cast<const OrderEvent &>(event);
         Log::get_logger()->info("{}: Received order to {} {} {}.", name_,
                                 order.direction == OrderDirection::BUY ? "BUY" : "SELL",

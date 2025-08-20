@@ -1,5 +1,7 @@
 #include "../../include/core/EventBus.h"
 #include "../../include/core/Log.h"
+#include "../../include/utils/Timer.h"
+#include "../../include/utils/PerformanceMonitor.h"
 
 namespace hft_system
 {
@@ -92,6 +94,44 @@ namespace hft_system
                     }
                 }
 
+                // Add timing for event handling
+                std::string event_type_str;
+                switch (event->type)
+                {
+                case EventType::MARKET:
+                    event_type_str = "MARKET";
+                    break;
+                case EventType::ORDER_BOOK:
+                    event_type_str = "ORDER_BOOK";
+                    break;
+                case EventType::SIGNAL:
+                    event_type_str = "SIGNAL";
+                    break;
+                case EventType::ORDER:
+                    event_type_str = "ORDER";
+                    break;
+                case EventType::FILL:
+                    event_type_str = "FILL";
+                    break;
+                case EventType::PORTFOLIO_UPDATE:
+                    event_type_str = "PORTFOLIO_UPDATE";
+                    break;
+                case EventType::NEWS:
+                    event_type_str = "NEWS";
+                    break;
+                case EventType::MARKET_REGIME_CHANGED:
+                    event_type_str = "MARKET_REGIME_CHANGED";
+                    break;
+                case EventType::SYSTEM:
+                    event_type_str = "SYSTEM";
+                    break;
+                default:
+                    event_type_str = "UNKNOWN";
+                    break;
+                }
+
+                Timer event_timer("EventBus_dispatch_" + event_type_str);
+
                 for (const auto &subscriber : subscribers_to_notify)
                 {
                     try
@@ -103,6 +143,10 @@ namespace hft_system
                         Log::get_logger()->error("Exception in subscriber: {}", e.what());
                     }
                 }
+
+                // Record the timing metric
+                PerformanceMonitor::get_instance().record_metric(
+                    "EventBus_dispatch_" + event_type_str, event_timer.elapsed_nanoseconds());
             }
         }
         Log::get_logger()->info("EventBus dispatch loop finished.");

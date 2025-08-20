@@ -1,14 +1,15 @@
 #include "../../include/data/HistoricCSVDataHandler.h"
 #include "../../include/core/Log.h"
+#include "../../include/utils/Timer.h"
+#include "../../include/utils/PerformanceMonitor.h"
 #include "simdjson.h"
 #include <fstream>
 #include <string>
-#include <algorithm>
 #include <sstream>
+#include <vector>
 
 namespace hft_system
 {
-
     HistoricCSVDataHandler::HistoricCSVDataHandler(std::shared_ptr<EventBus> event_bus, std::string symbol, std::string file_path)
         : DataHandler(event_bus, "HistoricCSVDataHandler"),
           symbol_(std::move(symbol)),
@@ -38,38 +39,43 @@ namespace hft_system
         }
     }
 
-    // Helper function to safely extract JSON strings from CSV
-    std::pair<std::string, std::string> extract_json_from_csv_line(const std::string &line)
+    // Add a CSV parsing function that handles quotes properly
+    std::vector<std::string> parse_csv_line(const std::string &line)
     {
-        // Expected format: timestamp,"[bid_json]","[ask_json]"
-        size_t first_quote = line.find('"');
-        if (first_quote == std::string::npos)
+        std::vector<std::string> fields;
+        std::string field;
+        bool in_quotes = false;
+
+        for (char c : line)
         {
-            throw std::runtime_error("No opening quote found");
+            if (c == '"')
+            {
+                in_quotes = !in_quotes;
+            }
+            else if (c == ',' && !in_quotes)
+            {
+                fields.push_back(field);
+                field.clear();
+            }
+            else
+            {
+                field += c;
+            }
         }
 
-        size_t second_quote = line.find('"', first_quote + 1);
-        if (second_quote == std::string::npos)
+        // Add the last field
+        fields.push_back(field);
+
+        // Remove quotes from fields
+        for (auto &f : fields)
         {
-            throw std::runtime_error("No closing quote for bids");
+            if (f.size() >= 2 && f.front() == '"' && f.back() == '"')
+            {
+                f = f.substr(1, f.size() - 2);
+            }
         }
 
-        size_t third_quote = line.find('"', second_quote + 1);
-        if (third_quote == std::string::npos)
-        {
-            throw std::runtime_error("No opening quote for asks");
-        }
-
-        size_t fourth_quote = line.find('"', third_quote + 1);
-        if (fourth_quote == std::string::npos)
-        {
-            throw std::runtime_error("No closing quote for asks");
-        }
-
-        std::string bids_str = line.substr(first_quote + 1, second_quote - first_quote - 1);
-        std::string asks_str = line.substr(third_quote + 1, fourth_quote - third_quote - 1);
-
-        return {bids_str, asks_str};
+        return fields;
     }
 
     void HistoricCSVDataHandler::run()
@@ -79,14 +85,13 @@ namespace hft_system
         std::ifstream file(file_path_);
         if (!file.is_open())
         {
-            Log::get_logger()->error("FATAL: Could not open data file: {}", file_path_);
+            Log::get_logger()->error("Failed to open file: {}", file_path_);
             return;
         }
 
         std::string line;
-        std::getline(file, line); // Skip header
-
-        size_t line_number = 1; // Start from 1 since we skipped header
+        int line_number = 0;
+        bool header_skipped = false;
 
         while (is_running_.load() && std::getline(file, line))
         {
@@ -97,104 +102,35 @@ namespace hft_system
                 continue; // Skip empty lines
             }
 
+            if (!header_skipped)
+            {
+                header_skipped = true;
+                continue; // Skip header row
+            }
+
             try
             {
-                // Extract timestamp (everything before first comma)
-                size_t first_comma = line.find(',');
-                if (first_comma == std::string::npos)
+                TIME_FUNCTION("HistoricCSVDataHandler_process_line");
+
+                auto fields = parse_csv_line(line);
+
+                if (fields.size() < 6)
                 {
-                    Log::get_logger()->warn("Line {}: No comma found, skipping", line_number);
+                    Log::get_logger()->error("Line {}: Not enough fields: {}", line_number, line);
                     continue;
                 }
 
-                std::string ts_str = line.substr(0, first_comma);
+                // Process the fields and create a market event
+                long timestamp = std::stol(fields[0]);
+                double open = std::stod(fields[1]);
+                double high = std::stod(fields[2]);
+                double low = std::stod(fields[3]);
+                double close = std::stod(fields[4]);
+                double volume = std::stod(fields[5]);
 
-                // Extract JSON strings safely
-                auto [bids_str, asks_str] = extract_json_from_csv_line(line);
+                auto market_event = std::make_shared<MarketEvent>(symbol_, close);
 
-                // Validate JSON strings are not empty
-                if (bids_str.empty() || asks_str.empty())
-                {
-                    Log::get_logger()->warn("Line {}: Empty JSON data, skipping", line_number);
-                    continue;
-                }
-
-                OrderBook book;
-                book.symbol = symbol_;
-                book.timestamp = std::stoll(ts_str);
-
-                // Create separate parsers for each JSON string to avoid reuse issues
-                simdjson::ondemand::parser bids_parser;
-                simdjson::ondemand::parser asks_parser;
-
-                // Parse bids with error checking
-                try
-                {
-                    simdjson::ondemand::document bids_doc = bids_parser.iterate(bids_str);
-                    simdjson::ondemand::array bids_array = bids_doc.get_array();
-
-                    for (auto bid_level_value : bids_array)
-                    {
-                        simdjson::ondemand::array level_array = bid_level_value.get_array();
-
-                        auto iter = level_array.begin();
-                        if (iter == level_array.end())
-                            continue;
-
-                        double price = (*iter).get_double();
-                        ++iter;
-                        if (iter == level_array.end())
-                            continue;
-
-                        double quantity = (*iter).get_double();
-
-                        book.bids.push_back({price, quantity});
-                    }
-                }
-                catch (const simdjson::simdjson_error &e)
-                {
-                    Log::get_logger()->error("Line {}: Failed to parse bids JSON: '{}'. Error: {}",
-                                             line_number, bids_str, e.what());
-                    continue;
-                }
-
-                // Parse asks with error checking
-                try
-                {
-                    simdjson::ondemand::document asks_doc = asks_parser.iterate(asks_str);
-                    simdjson::ondemand::array asks_array = asks_doc.get_array();
-
-                    for (auto ask_level_value : asks_array)
-                    {
-                        simdjson::ondemand::array level_array = ask_level_value.get_array();
-
-                        auto iter = level_array.begin();
-                        if (iter == level_array.end())
-                            continue;
-
-                        double price = (*iter).get_double();
-                        ++iter;
-                        if (iter == level_array.end())
-                            continue;
-
-                        double quantity = (*iter).get_double();
-
-                        book.asks.push_back({price, quantity});
-                    }
-                }
-                catch (const simdjson::simdjson_error &e)
-                {
-                    Log::get_logger()->error("Line {}: Failed to parse asks JSON: '{}'. Error: {}",
-                                             line_number, asks_str, e.what());
-                    continue;
-                }
-
-                // Only publish if we have valid data
-                if (!book.bids.empty() || !book.asks.empty())
-                {
-                    auto ob_event = std::make_shared<OrderBookEvent>(book);
-                    event_bus_->publish(ob_event);
-                }
+                event_bus_->publish(market_event);
             }
             catch (const std::exception &e)
             {
@@ -207,7 +143,8 @@ namespace hft_system
             std::this_thread::sleep_for(std::chrono::microseconds(100));
         }
 
-        Log::get_logger()->info("DataHandler finished processing file: {}. Processed {} lines.", file_path_, line_number);
+        Log::get_logger()->info("DataHandler finished processing file: {}. Processed {} lines.",
+                                file_path_, line_number);
 
         // Signal system completion
         auto system_event = std::make_shared<Event>(EventType::SYSTEM);

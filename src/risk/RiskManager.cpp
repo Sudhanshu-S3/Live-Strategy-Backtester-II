@@ -1,5 +1,7 @@
 #include "../../include/risk/RiskManager.h"
 #include "../../include/core/Log.h"
+#include "../../include/utils/Timer.h"
+#include "../../include/utils/PerformanceMonitor.h"
 #include <functional>
 #include <algorithm>
 
@@ -50,6 +52,8 @@ namespace hft_system
 
     void RiskManager::on_signal(const Event &event)
     {
+        TIME_FUNCTION("RiskManager_on_signal");
+        
         const auto &signal = static_cast<const SignalEvent &>(event);
 
         if (latest_prices_.find(signal.symbol) == latest_prices_.end())
