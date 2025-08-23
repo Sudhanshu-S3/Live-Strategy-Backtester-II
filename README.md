@@ -42,7 +42,8 @@ make -j$(nproc)
 
 ## Run (example)
 ```bash
-./app            # If target name differs, list with: ls build
+./build/bin/hft_system
+./build/bin/run_tests        
 ```
 
 ## Tests
