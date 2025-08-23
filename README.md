@@ -1,4 +1,4 @@
-# Trading System Framework
+# Live-Strategy-Backtester
 
 A modular C++ event‑driven trading/backtesting framework focused on clean abstractions, extensibility, and performance awareness.
 
