@@ -54,7 +54,7 @@ ctest --output-on-failure
 ## Key Principles
 Single Responsibility, Separation of Concerns, Dependency Inversion, Strategy & Observer patterns (via EventBus), modular extensibility, testability, performance awareness.
 
-## Core Data Structures (Examples)
+## Core Data Structures
 - std::vector: Collections (strategies, Monte Carlo paths)
 - std::unordered_map: Symbol → position, config key → value
 - std::queue/deque: Event dispatch buffering
@@ -67,18 +67,6 @@ Single Responsibility, Separation of Concerns, Dependency Inversion, Strategy & 
 2. Add a data source: subclass DataHandler, publish events to EventBus.
 3. Add analytics module: implement component, integrate via Analytics orchestrator.
 4. Add risk rule: extend RiskManager logic or modularize into rule set.
-
-## Interview Talking Points
-Event‑driven design, Strategy pattern, risk vs execution separation, walk‑forward & Monte Carlo for robustness, avoiding overfitting, dependency inversion via pure virtual interfaces, performance instrumentation.
-
-## Roadmap Ideas
-- Concurrency & thread-safe EventBus
-- Object pooling for high-frequency events
-- Enhanced ML pipeline (feature store, model versioning)
-- Real exchange connectivity adapters
-
-## License
-(Add a license section if applicable.)
 
 ## Disclaimer
 For educational / research use.
