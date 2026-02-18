@@ -38,7 +38,7 @@ TEST_F(PerformanceTest, EndToEndSystemPerformance)
 
     // Get the absolute path to the test data file
     std::filesystem::path currentPath = std::filesystem::current_path();
-    std::string dataFilePath = (currentPath / "../tests/data/test_market_data.csv").string();
+    std::string dataFilePath = (currentPath / "../tests/data/benchmark_data.csv").string();
     config.data.file_path = dataFilePath;
 
     // Set up test strategy
