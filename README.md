@@ -7,6 +7,25 @@ A modular C++ event‑driven trading/backtesting framework focused on clean abst
 - Portfolio Updates: 5.5µs avg
 - Order Processing: Sub-microsecond latency
   
+## Performance & Benchmarks
+
+The system’s internal processing latency and throughput are measured using a dedicated, core-pinned benchmark. **Note: These are internal CPU-cycle measurements** (Tick-to-Trade processing) and exclude network stack, NIC hardware buffers, and exchange matching engine latencies.
+
+**Methodology:**
+- **Build:** Release mode (`-O3 -march=native -DNDEBUG`)
+- **Environment:** Thread pinned to an isolated core (`pthread_setaffinity_np`) to reduce OS scheduler jitter.
+- **Execution:** 20 iterations (with the first 3 discarded as cache warmups).
+- **Workload:** Full end-to-end backtest loop using historic CSV data, EventBus routing, and the `ORDER_BOOK_IMBALANCE` strategy.
+
+**Results (End-to-End System Processing):**
+- **Throughput:** ~477,000 events/sec (Processes 11-row batches in ~23 µs median).
+- **Per-Tick Processing Latency:** ~2.1 µs per market data tick (from ingestion to portfolio update).
+- **Percentiles (Total Run Time):** 
+  - **Median:** 23.03 µs
+  - **p95:** 133.93 µs *(Tail latency spike due to standard OS scheduler and `std::shared_ptr` allocations)*
+
+*Real-world tick-to-trade in production HFT requires kernel bypass (DPDK, Solarflare), lock-free SPSC queues, hugepages, and isolated cores (`isolcpus=`). This system is designed for modular backtesting and research.*
+
 ## Features
 - Event‑driven architecture (market, signal, order, fill, news events)
 - Pluggable strategies (Strategy base + concrete implementations)
