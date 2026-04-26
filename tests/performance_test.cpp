@@ -4,6 +4,12 @@
 #include <future>
 #include <memory>
 #include <filesystem>
+#include <pthread.h>
+#include <sched.h>
+#include <algorithm>
+#include <numeric>
+#include <vector>
+#include <cmath>
 
 #include "core/Log.h"
 #include "core/EventBus.h"
@@ -28,70 +34,83 @@ protected:
     }
 };
 
+static void pin_to_core(int core_id) {
+    cpu_set_t set;
+    CPU_ZERO(&set);
+    CPU_SET(core_id, &set);
+    pthread_setaffinity_np(pthread_self(), sizeof(set), &set);
+}
+
 TEST_F(PerformanceTest, EndToEndSystemPerformance)
 {
-    // Load test configuration
+    pin_to_core(2);   // pick an isolated core if you have isolcpus, else any non-0 core
+
+    // Configure the application to use the test data
     Config config;
     config.run_mode = RunMode::BACKTEST;
     config.initial_capital = 100000.0;
-    config.data.symbol = "TEST_STOCK";
+    config.data.symbol = "TEST_BTC";
+    config.data.file_path = std::string(PROJECT_SOURCE_DIR) + "/tests/data/test_market_data.csv";
+    config.execution.commission_pct = 0.001;
+    config.execution.slippage_pct = 0.0005;
+    config.risk.risk_per_trade_pct = 0.01;
+    config.risk.use_dynamic_sizing = true;
 
-    // Get the absolute path to the test data file
-    std::filesystem::path currentPath = std::filesystem::current_path();
-    std::string dataFilePath = (currentPath / "../tests/data/benchmark_data.csv").string();
-    config.data.file_path = dataFilePath;
+    // Add a simple strategy
+    StrategyConfig strategy;
+    strategy.name = "ORDER_BOOK_IMBALANCE";
+    strategy.symbol = "TEST_BTC";
+    strategy.params.lookback_levels = 10;
+    strategy.params.imbalance_threshold = 1.2;
+    config.strategies.push_back(strategy);
 
-    // Set up test strategy
-    StrategyConfig strat_config;
-    strat_config.name = "ORDER_BOOK_IMBALANCE";
-    strat_config.symbol = "TEST_STOCK";
+    constexpr int kWarmup = 3;
+    constexpr int kIterations = 20;
+    std::vector<int64_t> times_ns;
+    times_ns.reserve(kIterations);
 
-    // Fix: Directly assign to StrategyParams struct members
-    strat_config.params.lookback_levels = 5;
-    strat_config.params.imbalance_threshold = 1.2;
+    for (int i = 0; i < kWarmup + kIterations; ++i) {
+        PerformanceMonitor::get_instance().reset();
+        Timer t("Full_System_Test");
+        
+        Application app(config);
+        app.run(); // Calls the full initialization and backtest processing
+        
+        int64_t ns = t.elapsed_nanoseconds();
+        if (i >= kWarmup) times_ns.push_back(ns);
+    }
 
-    config.strategies.push_back(strat_config);
+    std::sort(times_ns.begin(), times_ns.end());
+    int64_t median = times_ns[times_ns.size() / 2];
+    int64_t p95    = times_ns[static_cast<size_t>(times_ns.size() * 0.95)];
+    int64_t min    = times_ns.front();
+    int64_t max    = times_ns.back();
+    double  mean   = std::accumulate(times_ns.begin(), times_ns.end(), 0.0) / times_ns.size();
+    double  var    = 0.0;
+    for (auto v : times_ns) var += (v - mean) * (v - mean);
+    double stddev  = std::sqrt(var / times_ns.size());
 
-    // Reset performance monitor
-    PerformanceMonitor::get_instance().reset();
+    Log::get_logger()->info("Iterations={}, warmup={}, median={} ns, p95={} ns, min={} ns, max={} ns, stddev={:.0f} ns",
+                            times_ns.size(), kWarmup, median, p95, min, max, stddev);
 
-    // Run full system test with timing
-    Timer system_timer("Full_System_Test");
+    // --- Dump Per-Stage Latency Table ---
+    Log::get_logger()->info("-----------------------------------------------------------------------------------------");
+    Log::get_logger()->info("{:<40s} | {:>8s} | {:>8s} | {:>8s} | {:>8s}", "Stage", "Count", "p50 (ns)", "p95 (ns)", "p99 (ns)");
+    Log::get_logger()->info("-----------------------------------------------------------------------------------------");
 
-    Application app(config);
-    auto report = app.run_backtest();
-
-    int64_t total_time_ns = system_timer.elapsed_nanoseconds();
-
-    // Log the total system time
-    Log::get_logger()->info("End-to-end system test completed in {} ns ({} ms)",
-                            total_time_ns, total_time_ns / 1000000.0);
-
-    // Get and print detailed performance metrics
     auto metrics = PerformanceMonitor::get_instance().get_statistics();
-
-    for (const auto &[name, stats] : metrics)
-    {
-        Log::get_logger()->info("Performance metric: {}", name);
-        Log::get_logger()->info("  Count: {}", static_cast<int>(stats.at("count")));
-        Log::get_logger()->info("  Avg: {} ns", stats.at("avg_ns"));
-        Log::get_logger()->info("  Min: {} ns", stats.at("min_ns"));
-        Log::get_logger()->info("  Max: {} ns", stats.at("max_ns"));
-
-        if (stats.count("p99_ns"))
-        {
-            Log::get_logger()->info("  p99: {} ns", stats.at("p99_ns"));
+    for (const auto &[name, stats] : metrics) {
+        // Only print if the statistics we need are present
+        if (stats.count("count") && stats.count("p50_ns") && stats.count("p95_ns") && stats.count("p99_ns")) {
+            Log::get_logger()->info("{:<40s} | {:>8.0f} | {:>8.0f} | {:>8.0f} | {:>8.0f}",
+                name,
+                stats.at("count"),
+                stats.at("p50_ns"),
+                stats.at("p95_ns"),
+                stats.at("p99_ns"));
         }
     }
+    Log::get_logger()->info("-----------------------------------------------------------------------------------------");
 
-    // For the test to pass even if report is empty - we're testing performance metrics
-    if (report.empty())
-    {
-        Log::get_logger()->info("No trading happened during the test, but performance metrics were collected");
-        // Add a key to the report so the test doesn't fail
-        report["test_completed"] = true;
-    }
-
-    // Ensure the test passes if we collected metrics
-    ASSERT_GT(metrics.size(), 0);
+    ASSERT_GT(times_ns.size(), 0u);
 }
