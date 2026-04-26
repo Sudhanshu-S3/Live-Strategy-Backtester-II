@@ -74,10 +74,20 @@ namespace hft_system
     struct MarketEvent : public Event
     {
         MarketEvent(std::string symbol, double price)
-            : Event(EventType::MARKET), symbol(std::move(symbol)), price(price) {}
+            : Event(EventType::MARKET), symbol(std::move(symbol)),
+              price(price), open(price), high(price), low(price), close(price), volume(0.0) {}
+
+        MarketEvent(std::string symbol, double open, double high, double low, double close, double volume)
+            : Event(EventType::MARKET), symbol(std::move(symbol)),
+              price(close), open(open), high(high), low(low), close(close), volume(volume) {}
 
         const std::string symbol;
-        const double price;
+        const double price; // alias for close, preserved for existing callers
+        const double open;
+        const double high;
+        const double low;
+        const double close;
+        const double volume;
     };
 
     struct OrderBookEvent : public Event
