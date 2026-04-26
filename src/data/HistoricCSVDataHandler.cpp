@@ -128,7 +128,7 @@ namespace hft_system
                 double close = std::stod(fields[4]);
                 double volume = std::stod(fields[5]);
 
-                auto market_event = std::make_shared<MarketEvent>(symbol_, open, high, low, close, volume);
+                auto market_event = std::make_shared<MarketEvent>(symbol_, close);
 
                 event_bus_->publish(market_event);
             }
@@ -139,8 +139,6 @@ namespace hft_system
                 continue;
             }
 
-            // Add a small delay to prevent overwhelming the system
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
         }
 
         Log::get_logger()->info("DataHandler finished processing file: {}. Processed {} lines.",
