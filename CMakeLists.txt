@@ -1,6 +1,6 @@
-# =============================================================================
+
 # Project Definition & C++ Standard
-# =============================================================================
+
 cmake_minimum_required(VERSION 3.20)
 project(HFT_System LANGUAGES CXX)
 
@@ -11,8 +11,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Pass the project's root directory path to the C++ code
-add_compile_definitions(PROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -march=native -g -DNDEBUG")
 
 # --- Set Output Directories ---
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -23,9 +27,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 find_package(Boost 1.74 REQUIRED COMPONENTS system thread)
 find_package(OpenSSL REQUIRED)
 
-# =============================================================================
+
 # Dependency Management (FetchContent)
-# =============================================================================
+
 include(FetchContent)
 
 FetchContent_Declare(spdlog GIT_REPOSITORY https://github.com/gabime/spdlog.git GIT_TAG v1.14.1)
@@ -54,9 +58,9 @@ if(NOT boost_beast_POPULATED)
     FetchContent_Populate(boost_beast)
 endif()
 
-# =============================================================================
+
 # Project Structure & Main Executable
-# =============================================================================
+
 add_subdirectory(src)
 enable_testing()
 add_subdirectory(tests)
