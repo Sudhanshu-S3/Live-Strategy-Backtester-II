@@ -62,8 +62,13 @@ namespace hft_system
             double sum = std::accumulate(returns.begin(), returns.end(), 0.0);
             double mean = sum / returns.size();
             double sq_sum = std::inner_product(returns.begin(), returns.end(), returns.begin(), 0.0);
-            double stdev = std::sqrt(sq_sum / returns.size() - mean * mean);
-            report["sharpe_ratio"] = (stdev > 1e-9) ? (mean / stdev) * std::sqrt(252) : 0.0;
+            
+            // Note: Update to use config_.bars_per_year instead of an undeclared bars_per_year_
+            const double bars_per_year = config_.bars_per_year > 0 ? config_.bars_per_year : 252.0 * 390.0;
+            
+            double variance = sq_sum / returns.size() - mean * mean;
+            double stdev = std::sqrt(std::max(0.0, variance));
+            report["sharpe_ratio"] = (stdev > 1e-9) ? (mean / stdev) * std::sqrt(bars_per_year) : 0.0;
 
             double downside_sq_sum = 0.0;
             for (double r : returns)
@@ -71,9 +76,9 @@ namespace hft_system
                 if (r < 0)
                     downside_sq_sum += r * r;
             }
-            double downside_dev = std::sqrt(downside_sq_sum / returns.size());
-            report["sortino_ratio"] = (downside_dev > 1e-9) ? (mean / downside_dev) * std::sqrt(252) : 0.0;
-        }
+            double downside_dev = std::sqrt(std::max(0.0, downside_sq_sum / returns.size()));
+            report["sortino_ratio"] = (downside_dev > 1e-9) ? (mean / downside_dev) * std::sqrt(bars_per_year) : 0.0;
+        }    
 
         // Trade-Level Analysis
         if (!trade_log.empty())

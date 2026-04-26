@@ -25,7 +25,7 @@ namespace hft_system
 
     private:
         void on_portfolio_update(const Event &event);
-
+        double bars_per_year_ = 0.0;
         AnalyticsConfig config_;
         std::vector<double> equity_curve_;
     };

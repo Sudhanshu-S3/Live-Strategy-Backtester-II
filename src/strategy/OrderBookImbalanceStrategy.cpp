@@ -16,6 +16,38 @@ namespace hft_system
 
     std::unique_ptr<SignalEvent> OrderBookImbalanceStrategy::calculate_signal(const MarketEvent &event)
     {
+        TIME_FUNCTION("OrderBookImbalanceStrategy_calculate_signal_bar");
+
+        if (event.symbol != symbol_)
+            return nullptr;
+
+        // Bar-based analog of order-book imbalance: intra-bar buy vs sell pressure.
+        // close near the high implies buyers dominated the bar; close near the low implies sellers did.
+        double range = event.high - event.low;
+        if (range <= 1e-9)
+            return nullptr;
+
+        double buy_pressure = event.close - event.low;
+        double sell_pressure = event.high - event.close;
+        if (sell_pressure <= 1e-9)
+            return nullptr;
+
+        double imbalance_ratio = buy_pressure / sell_pressure;
+        double current_sentiment = sentiment_scores_.count(symbol_) ? sentiment_scores_[symbol_] : 0.0;
+
+        if (imbalance_ratio > current_imbalance_threshold_)
+        {
+            if (current_sentiment < -0.5)
+                return nullptr;
+            return std::make_unique<SignalEvent>(symbol_, OrderDirection::BUY);
+        }
+        else if (imbalance_ratio < (1.0 / current_imbalance_threshold_))
+        {
+            if (current_sentiment > 0.5)
+                return nullptr;
+            return std::make_unique<SignalEvent>(symbol_, OrderDirection::SELL);
+        }
+
         return nullptr;
     }
 

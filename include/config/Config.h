@@ -36,6 +36,7 @@ namespace hft_system
 
     struct AnalyticsConfig
     {
+        double bars_per_year = 98280.0; // Added for the JSON config parsing
         bool calculate_sharpe = true;
         bool calculate_max_drawdown = true;
     };
