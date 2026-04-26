@@ -128,7 +128,7 @@ namespace hft_system
                 double close = std::stod(fields[4]);
                 double volume = std::stod(fields[5]);
 
-                auto market_event = std::make_shared<MarketEvent>(symbol_, close);
+                auto market_event = std::make_shared<MarketEvent>(symbol_, open, high, low, close, volume);
 
                 event_bus_->publish(market_event);
             }

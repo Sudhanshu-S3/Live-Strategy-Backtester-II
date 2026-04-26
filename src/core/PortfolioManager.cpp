@@ -36,72 +36,81 @@ namespace hft_system
 
         const auto &fill = static_cast<const FillEvent &>(event);
 
-        double cost = fill.fill_price * fill.quantity;
-        if (fill.direction == OrderDirection::BUY)
+        double total_equity = 0.0;
+        double cash_snapshot = 0.0;
         {
-            cash_ -= (cost + fill.commission);
-        }
-        else
-        {
-            cash_ += (cost - fill.commission);
-        }
+            std::lock_guard<std::mutex> lock(positions_mutex_);
 
-        Position &position = positions_[fill.symbol];
-        bool is_closing_trade = (position.quantity != 0) && (fill.direction != position.direction);
-
-        if (is_closing_trade)
-        {
-            Trade trade;
-            trade.symbol = fill.symbol;
-            trade.direction = position.direction;
-            trade.quantity = std::min(position.quantity, fill.quantity);
-            trade.entry_price = position.entry_price;
-            trade.exit_price = fill.fill_price;
-
-            if (trade.direction == OrderDirection::BUY)
+            double cost = fill.fill_price * fill.quantity;
+            if (fill.direction == OrderDirection::BUY)
             {
-                trade.pnl = (trade.exit_price - trade.entry_price) * trade.quantity - fill.commission;
+                cash_ -= (cost + fill.commission);
             }
             else
             {
-                trade.pnl = (trade.entry_price - trade.exit_price) * trade.quantity - fill.commission;
+                cash_ += (cost - fill.commission);
             }
-            trade_log_.push_back(trade);
-            Log::get_logger()->info("Closed trade for {}. P&L: ${:.2f}", trade.symbol, trade.pnl);
 
-            position.quantity -= trade.quantity;
-            if (position.quantity < 1e-9) // Check for near-zero quantity
+            Position &position = positions_[fill.symbol];
+            bool is_closing_trade = (position.quantity != 0) && (fill.direction != position.direction);
+
+            if (is_closing_trade)
             {
-                positions_.erase(fill.symbol);
+                Trade trade;
+                trade.symbol = fill.symbol;
+                trade.direction = position.direction;
+                trade.quantity = std::min(position.quantity, fill.quantity);
+                trade.entry_price = position.entry_price;
+                trade.exit_price = fill.fill_price;
+
+                if (trade.direction == OrderDirection::BUY)
+                {
+                    trade.pnl = (trade.exit_price - trade.entry_price) * trade.quantity - fill.commission;
+                }
+                else
+                {
+                    trade.pnl = (trade.entry_price - trade.exit_price) * trade.quantity - fill.commission;
+                }
+                trade_log_.push_back(trade);
+                Log::get_logger()->info("Closed trade for {}. P&L: ${:.2f}", trade.symbol, trade.pnl);
+
+                position.quantity -= trade.quantity;
+                if (position.quantity < 1e-9) // Check for near-zero quantity
+                {
+                    positions_.erase(fill.symbol);
+                }
             }
-        }
-        else
-        {
-            double total_value = (position.entry_price * position.quantity) + cost;
-            position.quantity += fill.quantity;
-            position.entry_price = total_value / position.quantity;
-            position.direction = fill.direction;
-            position.symbol = fill.symbol;
+            else
+            {
+                double total_value = (position.entry_price * position.quantity) + cost;
+                position.quantity += fill.quantity;
+                position.entry_price = total_value / position.quantity;
+                position.direction = fill.direction;
+                position.symbol = fill.symbol;
+            }
+
+            double open_positions_value = 0;
+            for (const auto &[symbol, pos] : positions_)
+            {
+                open_positions_value += pos.quantity * pos.entry_price;
+            }
+            total_equity = cash_ + open_positions_value;
+            cash_snapshot = cash_;
         }
 
-        double open_positions_value = 0;
-        for (const auto &[symbol, pos] : positions_)
-        {
-            open_positions_value += pos.quantity * pos.entry_price;
-        }
-        double total_equity = cash_ + open_positions_value;
-
-        auto update_event = std::make_shared<PortfolioUpdateEvent>(total_equity, cash_);
+        auto update_event = std::make_shared<PortfolioUpdateEvent>(total_equity, cash_snapshot);
         event_bus_->publish(update_event);
     }
 
-    const std::list<hft_system::Trade> &PortfolioManager::get_trade_log() const
+    std::list<hft_system::Trade> PortfolioManager::get_trade_log() const
     {
+        std::lock_guard<std::mutex> lock(positions_mutex_);
         return trade_log_;
     }
 
     std::map<std::string, double> PortfolioManager::get_pnl_summary() const
     {
+        std::lock_guard<std::mutex> lock(positions_mutex_);
         std::map<std::string, double> summary;
         double total_pnl = 0.0;
         for (const auto &trade : trade_log_)
