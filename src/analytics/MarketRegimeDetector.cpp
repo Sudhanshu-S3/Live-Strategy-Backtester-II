@@ -51,12 +51,15 @@ namespace hft_system
         double sum = std::accumulate(returns.begin(), returns.end(), 0.0);
         double mean = sum / returns.size();
         double sq_sum = std::inner_product(returns.begin(), returns.end(), returns.begin(), 0.0);
-        double stdev = std::sqrt(sq_sum / returns.size() - mean * mean);
-
-        // 2. Calculate Trend (Simple Moving Average slope)
-        double first_sma = std::accumulate(price_history_.end() - trend_period_, price_history_.end() - (trend_period_ / 2), 0.0) / (trend_period_ / 2);
-        double second_sma = std::accumulate(price_history_.end() - (trend_period_ / 2), price_history_.end(), 0.0) / (trend_period_ / 2);
-
+        double variance = sq_sum / returns.size() - mean * mean;
+        double stdev = std::sqrt(std::max(0.0, variance));
+        
+                // 2. Calculate Trend (Simple Moving Average slope)
+        const int half_lo = trend_period_ / 2;          // floor(n/2): size of first half
+        const int half_hi = trend_period_ - half_lo;    // ceil(n/2):  size of second half
+        double first_sma  = std::accumulate(price_history_.end() - trend_period_, price_history_.end() - half_hi, 0.0) / half_lo;
+        double second_sma = std::accumulate(price_history_.end() - half_hi, price_history_.end(), 0.0) / half_hi;
+        
         MarketState new_state;
         // Determine Volatility Regime
         if (stdev > 0.02)
