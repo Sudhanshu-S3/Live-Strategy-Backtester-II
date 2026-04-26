@@ -34,13 +34,13 @@ TEST_F(PortfolioManagerTest, ShouldProcessFillEventAndUpdateState) {
 
     // Our spy now listens for the PortfolioUpdateEvent
     event_bus->subscribe(EventType::PORTFOLIO_UPDATE,
-        [&](const Event& event) {
-            const auto& update_event = dynamic_cast<const PortfolioUpdateEvent&>(event);
-            // Initial capital was 100,000. Fill was for 10 * 150.25 = 1502.5. Commission was 1.5.
-            // New cash should be 100000 - 1502.5 - 1.5 = 98496.0
-            EXPECT_NEAR(update_event.cash, 98496.0, 0.01);
-            update_received_promise.set_value(true);
-        });
+    [&](const Event& event) {
+        const auto& update_event = dynamic_cast<const PortfolioUpdateEvent&>(event);
+        if (update_event.cash > 99999.0) return;  // skip initial start() update
+        EXPECT_NEAR(update_event.cash, 98496.0, 0.01);
+        update_received_promise.set_value(true);
+    });
+
     
     event_bus->start();
     portfolio_manager->start();

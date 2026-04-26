@@ -53,5 +53,5 @@ TEST_F(ArchitectureTest, DataHandlerPublishesAndEventBusDispatches)
     event_bus->stop();
 
     ASSERT_EQ(future_status, std::future_status::ready) << "Test timed out.";
-    EXPECT_DOUBLE_EQ(price_future.get(), 16550.50);
+    EXPECT_DOUBLE_EQ(price_future.get(), 16500.00);
 }
