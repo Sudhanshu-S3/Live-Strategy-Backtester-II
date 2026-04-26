@@ -40,6 +40,7 @@ namespace hft_system
         void on_read(beast::error_code ec, std::size_t bytes_transferred);
         void on_close(beast::error_code ec);
         void process_message(const std::string &message);
+        void fail(beast::error_code ec, const char *what);
 
         WebSocketConfig config_;
         net::io_context ioc_;

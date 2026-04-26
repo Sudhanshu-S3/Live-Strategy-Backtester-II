@@ -6,6 +6,7 @@
 #include "DataTypes.h"
 #include <map>
 #include <list>
+#include <mutex>
 
 namespace hft_system
 {
@@ -26,7 +27,7 @@ namespace hft_system
         void start() override;
         void stop() override;
 
-        const std::list<Trade> &get_trade_log() const;
+        std::list<Trade> get_trade_log() const;
         std::map<std::string, double> get_pnl_summary() const;
 
     private:
@@ -36,6 +37,7 @@ namespace hft_system
         double cash_;
         std::map<std::string, Position> positions_;
         std::list<Trade> trade_log_;
+        mutable std::mutex positions_mutex_;
     };
 
 } // namespace hft_system

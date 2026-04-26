@@ -126,6 +126,11 @@ namespace hft_system
         Log::get_logger()->info("WebSocket connection closed.");
     }
 
+    void WebSocketDataHandler::fail(beast::error_code ec, const char *what)
+    {
+        Log::get_logger()->error("{}: {}", what, ec.message());
+    }
+
     void WebSocketDataHandler::process_message(const std::string &message)
     {
         try
