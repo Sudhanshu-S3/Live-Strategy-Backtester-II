@@ -1,3 +1,8 @@
+/**
+ * @file MonteCarloSimulator.h
+ * @brief Public API declarations for MonteCarloSimulator.
+ */
+
 #ifndef HFT_SYSTEM_MONTECARLOSIMULATOR_H
 #define HFT_SYSTEM_MONTECARLOSIMULATOR_H
 
@@ -14,6 +19,7 @@ namespace hft_system
     public:
         MonteCarloSimulator(const std::list<Trade> &trade_log, int num_simulations, double initial_equity);
 
+/** @brief run. */
         void run();
         void print_results() const;
 

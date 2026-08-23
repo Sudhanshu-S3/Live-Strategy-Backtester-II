@@ -1,3 +1,8 @@
+/**
+ * @file Timer.h
+ * @brief Public API declarations for Timer.
+ */
+
 #pragma once
 
 #include <chrono>

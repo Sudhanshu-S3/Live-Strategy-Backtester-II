@@ -1,3 +1,8 @@
+/**
+ * @file Config.h
+ * @brief Public API declarations for Config.
+ */
+
 #ifndef HFT_SYSTEM_CONFIG_H
 #define HFT_SYSTEM_CONFIG_H
 

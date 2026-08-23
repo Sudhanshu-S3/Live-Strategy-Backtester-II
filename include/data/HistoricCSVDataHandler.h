@@ -1,3 +1,8 @@
+/**
+ * @file HistoricCSVDataHandler.h
+ * @brief Public API declarations for HistoricCSVDataHandler.
+ */
+
 #ifndef HFT_SYSTEM_HISTORICCSVDATAHANDLER_H
 #define HFT_SYSTEM_HISTORICCSVDATAHANDLER_H
 

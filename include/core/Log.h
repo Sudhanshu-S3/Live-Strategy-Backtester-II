@@ -1,3 +1,8 @@
+/**
+ * @file Log.h
+ * @brief Public API declarations for Log.
+ */
+
 
 #ifndef HFT_SYSTEM_LOG_H
 #define HFT_SYSTEM_LOG_H
@@ -11,6 +16,7 @@ namespace hft_system
     class Log
     {
     public:
+/** @brief init. */
         static void init();
         static void shutdown();
         static std::shared_ptr<spdlog::logger> &get_logger()

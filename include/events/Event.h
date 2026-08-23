@@ -1,3 +1,8 @@
+/**
+ * @file Event.h
+ * @brief Public API declarations for Event.
+ */
+
 #ifndef HFT_SYSTEM_EVENT_H
 #define HFT_SYSTEM_EVENT_H
 

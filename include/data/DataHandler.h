@@ -1,3 +1,8 @@
+/**
+ * @file DataHandler.h
+ * @brief Public API declarations for DataHandler.
+ */
+
 #ifndef HFT_SYSTEM_DATAHANDLER_H
 #define HFT_SYSTEM_DATAHANDLER_H
 

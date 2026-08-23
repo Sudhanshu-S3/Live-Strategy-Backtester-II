@@ -1,3 +1,8 @@
+/**
+ * @file DataTypes.h
+ * @brief Public API declarations for DataTypes.
+ */
+
 #ifndef HFT_SYSTEM_DATATYPES_H
 #define HFT_SYSTEM_DATATYPES_H
 

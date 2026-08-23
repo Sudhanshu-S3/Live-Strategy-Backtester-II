@@ -1,3 +1,8 @@
+/**
+ * @file WalkForwardAnalyzer.h
+ * @brief Public API declarations for WalkForwardAnalyzer.
+ */
+
 #ifndef HFT_SYSTEM_WALKFORWARDANALYZER_H
 #define HFT_SYSTEM_WALKFORWARDANALYZER_H
 
@@ -12,6 +17,7 @@ namespace hft_system
     {
     public:
         WalkForwardAnalyzer(Config config);
+/** @brief run. */
         void run();
 
     private:

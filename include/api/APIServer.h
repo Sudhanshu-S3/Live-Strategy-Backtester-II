@@ -1,3 +1,8 @@
+/**
+ * @file APIServer.h
+ * @brief Public API declarations for APIServer.
+ */
+
 #ifndef HFT_SYSTEM_APISERVER_H
 #define HFT_SYSTEM_APISERVER_H
 
@@ -19,6 +24,7 @@ class APIServer {
 public:
     APIServer(Application& app, const std::string& address, unsigned short port);
     ~APIServer();
+/** @brief start. */
     void start();
     void stop();
 

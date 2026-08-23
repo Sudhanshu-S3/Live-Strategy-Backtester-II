@@ -1,3 +1,8 @@
+/**
+ * @file Strategy.h
+ * @brief Public API declarations for Strategy.
+ */
+
 
 #ifndef HFT_SYSTEM_STRATEGY_H
 #define HFT_SYSTEM_STRATEGY_H

@@ -1,3 +1,8 @@
+/**
+ * @file BuyEveryTickStrategy.h
+ * @brief Public API declarations for BuyEveryTickStrategy.
+ */
+
 #ifndef HFT_SYSTEM_BUYEVERYTICKSTRATEGY_H
 #define HFT_SYSTEM_BUYEVERYTICKSTRATEGY_H
 

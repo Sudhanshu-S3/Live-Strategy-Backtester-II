@@ -1,3 +1,8 @@
+/**
+ * @file Application.h
+ * @brief Public API declarations for Application.
+ */
+
 #ifndef HFT_SYSTEM_APPLICATION_H
 #define HFT_SYSTEM_APPLICATION_H
 
@@ -27,13 +32,16 @@ namespace hft_system
         Application(Config config);
         ~Application();
 
+/** @brief run. */
         void run();
         void stop();
         std::map<std::string, double> get_analytics_report();
+/** @brief run backtest. */
         std::map<std::string, double> run_backtest();
         std::map<std::string, double> get_pnl_snapshot();
 
     private:
+/** @brief main loop. */
         void main_loop();
 
         Config config_;

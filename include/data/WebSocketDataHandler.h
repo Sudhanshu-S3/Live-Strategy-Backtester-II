@@ -1,3 +1,8 @@
+/**
+ * @file WebSocketDataHandler.h
+ * @brief Public API declarations for WebSocketDataHandler.
+ */
+
 #ifndef HFT_SYSTEM_WEBSOCKETDATAHANDLER_H
 #define HFT_SYSTEM_WEBSOCKETDATAHANDLER_H
 
@@ -32,14 +37,19 @@ namespace hft_system
         void run() override;
 
     private:
+/** @brief on resolve. */
         void on_resolve(beast::error_code ec, tcp::resolver::results_type results);
         void on_connect(beast::error_code ec, tcp::resolver::results_type::iterator endpoint_iter);
+/** @brief on ssl handshake. */
         void on_ssl_handshake(beast::error_code ec);
         void on_handshake(beast::error_code ec);
+/** @brief on write. */
         void on_write(beast::error_code ec, std::size_t bytes_transferred);
         void on_read(beast::error_code ec, std::size_t bytes_transferred);
+/** @brief on close. */
         void on_close(beast::error_code ec);
         void process_message(const std::string &message);
+/** @brief fail. */
         void fail(beast::error_code ec, const char *what);
 
         WebSocketConfig config_;

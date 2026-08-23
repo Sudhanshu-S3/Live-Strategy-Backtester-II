@@ -1,3 +1,8 @@
+/**
+ * @file NewsDataHandler.h
+ * @brief Public API declarations for NewsDataHandler.
+ */
+
 #ifndef HFT_SYSTEM_NEWSDATAHANDLER_H
 #define HFT_SYSTEM_NEWSDATAHANDLER_H
 

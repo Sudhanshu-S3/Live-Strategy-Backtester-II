@@ -1,3 +1,8 @@
+/**
+ * @file MarketRegimeDetector.h
+ * @brief Public API declarations for MarketRegimeDetector.
+ */
+
 #ifndef HFT_SYSTEM_MARKETREGIMEDETECTOR_H
 #define HFT_SYSTEM_MARKETREGIMEDETECTOR_H
 
@@ -17,6 +22,7 @@ namespace hft_system
         void stop() override;
 
     private:
+/** @brief on market event. */
         void on_market_event(const Event &event);
         void calculate_regime();
 

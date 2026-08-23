@@ -1,3 +1,8 @@
+/**
+ * @file Utils.h
+ * @brief Public API declarations for Utils.
+ */
+
 #ifndef HFT_SYSTEM_UTILS_H
 #define HFT_SYSTEM_UTILS_H
 

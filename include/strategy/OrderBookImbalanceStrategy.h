@@ -1,3 +1,8 @@
+/**
+ * @file OrderBookImbalanceStrategy.h
+ * @brief Public API declarations for OrderBookImbalanceStrategy.
+ */
+
 #ifndef HFT_SYSTEM_ORDERBOOKIMBALANCESTRATEGY_H
 #define HFT_SYSTEM_ORDERBOOKIMBALANCESTRATEGY_H
 
@@ -13,7 +18,9 @@ public:
     OrderBookImbalanceStrategy(std::string symbol, int levels, double threshold);
 
     std::unique_ptr<SignalEvent> calculate_signal(const MarketEvent& event) override;
+/** @brief calculate signal from order book. */
     std::unique_ptr<SignalEvent> calculate_signal_from_order_book(const OrderBookEvent& event);
+/** @brief on news. */
     void on_news(const NewsEvent& event);
 
     // Add a handler for market regime events
