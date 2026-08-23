@@ -1,3 +1,8 @@
+/**
+ * @file PerformanceMonitor.h
+ * @brief Public API declarations for PerformanceMonitor.
+ */
+
 #pragma once
 
 #include <string>
@@ -24,12 +29,14 @@ namespace hft_system
 
         void record_metric(const std::string &name, int64_t nanoseconds)
         {
+/** @brief lock. */
             std::lock_guard<std::mutex> lock(metrics_mutex_);
             metrics_[name].push_back(nanoseconds);
         }
 
         std::map<std::string, std::map<std::string, double>> get_statistics() const
         {
+/** @brief lock. */
             std::lock_guard<std::mutex> lock(metrics_mutex_);
             std::map<std::string, std::map<std::string, double>> results;
 
@@ -72,6 +79,7 @@ namespace hft_system
 
         void reset()
         {
+/** @brief lock. */
             std::lock_guard<std::mutex> lock(metrics_mutex_);
             metrics_.clear();
         }

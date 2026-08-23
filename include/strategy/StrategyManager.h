@@ -1,3 +1,8 @@
+/**
+ * @file StrategyManager.h
+ * @brief Public API declarations for StrategyManager.
+ */
+
 #ifndef HFT_SYSTEM_STRATEGYMANAGER_H
 #define HFT_SYSTEM_STRATEGYMANAGER_H
 
@@ -18,10 +23,12 @@ namespace hft_system
         void start() override;
         void stop() override;
 
+/** @brief add strategy. */
         void add_strategy(std::unique_ptr<Strategy> strategy);
 
     private:
         void on_market_event(const Event &event);
+/** @brief on order book event. */
         void on_order_book_event(const Event &event);
         void on_news_event(const Event &event);
         void on_market_regime_event(const Event &event);// Add this missing declaration

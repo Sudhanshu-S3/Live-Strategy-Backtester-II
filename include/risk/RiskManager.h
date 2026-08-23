@@ -1,3 +1,8 @@
+/**
+ * @file RiskManager.h
+ * @brief Public API declarations for RiskManager.
+ */
+
 #ifndef HFT_SYSTEM_RISKMANAGER_H
 #define HFT_SYSTEM_RISKMANAGER_H
 
@@ -17,10 +22,12 @@ public:
     void stop() override;
 
 private:
+/** @brief on signal. */
     void on_signal(const Event& event);
     void on_market(const Event& event);
     void on_portfolio_update(const Event& event);
     // Add a handler for order book events
+/** @brief on order book. */
     void on_order_book(const Event& event);
 
     RiskConfig risk_config_;

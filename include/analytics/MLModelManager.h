@@ -1,3 +1,8 @@
+/**
+ * @file MLModelManager.h
+ * @brief Public API declarations for MLModelManager.
+ */
+
 #ifndef HFT_SYSTEM_MLMODELMANAGER_H
 #define HFT_SYSTEM_MLMODELMANAGER_H
 
@@ -16,6 +21,7 @@ namespace hft_system
         void stop() override;
 
         // Simulates running a model to get a confidence score for a trade
+/** @brief get trade confidence. */
         double get_trade_confidence(const std::string &symbol);
 
     private:

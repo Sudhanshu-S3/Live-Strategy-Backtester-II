@@ -1,3 +1,8 @@
+/**
+ * @file Component.h
+ * @brief Public API declarations for Component.
+ */
+
 #ifndef HFT_SYSTEM_COMPONENT_H
 #define HFT_SYSTEM_COMPONENT_H
 

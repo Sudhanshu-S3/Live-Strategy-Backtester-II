@@ -1,3 +1,8 @@
+/**
+ * @file ExecutionHandler.h
+ * @brief Public API declarations for ExecutionHandler.
+ */
+
 #ifndef HFT_SYSTEM_EXECUTIONHANDLER_H
 #define HFT_SYSTEM_EXECUTIONHANDLER_H
 
@@ -19,6 +24,7 @@ namespace hft_system
 
     private:
         // Event handler DECLARATION
+/** @brief on order. */
         void on_order(const Event &event);
         ExecutionConfig config_;
     };

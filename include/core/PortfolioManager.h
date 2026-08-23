@@ -1,3 +1,8 @@
+/**
+ * @file PortfolioManager.h
+ * @brief Public API declarations for PortfolioManager.
+ */
+
 #ifndef HFT_SYSTEM_PORTFOLIOMANAGER_H
 #define HFT_SYSTEM_PORTFOLIOMANAGER_H
 
@@ -27,10 +32,12 @@ namespace hft_system
         void start() override;
         void stop() override;
 
+/** @brief get trade log. */
         std::list<Trade> get_trade_log() const;
         std::map<std::string, double> get_pnl_summary() const;
 
     private:
+/** @brief on fill. */
         void on_fill(const Event &event);
 
         double capital_;

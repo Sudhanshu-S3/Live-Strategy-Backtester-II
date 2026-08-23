@@ -1,3 +1,8 @@
+/**
+ * @file Analytics.h
+ * @brief Public API declarations for Analytics.
+ */
+
 #ifndef HFT_SYSTEM_ANALYTICS_H
 #define HFT_SYSTEM_ANALYTICS_H
 
@@ -21,9 +26,11 @@ namespace hft_system
         void stop() override;
 
         // This now returns a map of key-value metrics.
+/** @brief generate report. */
         std::map<std::string, double> generate_report(const std::list<Trade> &trade_log);
 
     private:
+/** @brief on portfolio update. */
         void on_portfolio_update(const Event &event);
         double bars_per_year_ = 0.0;
         AnalyticsConfig config_;
